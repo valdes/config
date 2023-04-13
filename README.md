@@ -1,2 +1,2 @@
 # config
-My app(Linux) config 
+My apps(Linux) configurations
