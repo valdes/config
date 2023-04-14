@@ -9,4 +9,9 @@ The next script copy the config file to its designed location
   cp .tmux.conf ~/
   cp .gitconfig ~/
   cp .zshrc ~/
+  cp home.nix ~/.config/nixpkgs/
 #+end_src
+
+** Dependencies
+- oh-my-zsh
+- Tmux manager
