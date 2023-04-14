@@ -7,4 +7,5 @@ The next script copy the config file to its designed location
 #+begin_src sh
   cp .emacs ~/
   cp .tmux.conf ~/
+  cp .gitconfig ~/
 #+end_src

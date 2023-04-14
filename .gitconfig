@@ -1,0 +1,9 @@
+[user]
+	name = Luis Valdés Guerrero
+	email = lguerrero85@gmail.com
+[core]
+	editor = emacs
+[merge]
+	tool = meld
+[credential]
+	helper = store
