@@ -6,4 +6,5 @@ The next script copy the config file to its designed location
 #+name: copy_configs_files
 #+begin_src sh
   cp .emacs ~/
+  cp .tmux.conf ~/
 #+end_src
