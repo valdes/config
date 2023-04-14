@@ -8,4 +8,5 @@ The next script copy the config file to its designed location
   cp .emacs ~/
   cp .tmux.conf ~/
   cp .gitconfig ~/
+  cp .zshrc ~/
 #+end_src
