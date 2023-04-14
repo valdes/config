@@ -3,7 +3,7 @@ My apps(Linux) configurations
 
 ** Copy configuration files
 The next script copy the config file to its designed location
-#+name copy_configs_files
+#+name: copy_configs_files
 #+begin_src sh
   cp .emacs ~/
 #+end_src
