@@ -25,6 +25,7 @@
     ripgrep # grep
     mcfly # sh history navigator
     tldr # man
+    hyperfine # command-line benchmarking tool
 
     # dev
     git
@@ -44,16 +45,15 @@
       };
     };
 
-#     git = {
-#       enable = true;
-#       userName = "Luis Valdés Guerrero1";
-#       userEmail = "lguerrero85@gmail.com";
-#       editor = "emacs";
-#       helper = "store";
-#       aliases = {
-#         st = "status";
-#       };
-#     };
+    git = {
+      enable = true;
+      aliases = {
+        st = "status";
+      };
+      includes = [
+        { path = "~/Dropbox/config/.gitconfig"; }
+      ];
+    };  
   };
 
 
