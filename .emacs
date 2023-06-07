@@ -32,6 +32,9 @@
     lsp-ui
     lsp-mode
     org-journal
+    org-roam
+    emacsql-sqlite
+    org-tree-slide
     lua-mode
     helm-mode-manager
     docker-compose-mode
@@ -40,6 +43,7 @@
     zencoding-mode
     projectile-rails
     helm-projectile
+    use-package
     git-gutter))
 
 (mapc #'(lambda (package)
@@ -204,7 +208,7 @@
 ;;Start server
 (server-mode 1)
 ;;
-(require 'helm-config)
+
 ;; global helm
 (helm-mode 1)
 (global-set-key (kbd "C-x C-f") 'helm-find-files)
@@ -479,22 +483,6 @@
 ;; Org Journal
 (require 'org-journal)
 (setq org-journal-dir "~/Dropbox/.org/journal/")
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(delete-selection-mode nil)
- '(haskell-process-type 'stack-ghci)
- '(package-selected-packages
-   '(yasnippet-snippets org-tree-slide nix-mode org-journal use-package org-roam which-key haskell-snippets lsp-haskell haskell-mode elm-yasnippets elm-mode zenburn-theme yasnippet projectile-rails magit helm-projectile))
- '(which-key-mode t))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
 
 ;; active Babel languages
 (org-babel-do-load-languages
