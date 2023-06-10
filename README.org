@@ -8,10 +8,8 @@ The next script copy the config file to its designed location
   cp .emacs ~/
   cp .tmux.conf ~/
   cp .gitconfig ~/
-  cp .zshrc ~/
-  cp home.nix ~/.config/nixpkgs/
+  cp home.nix ~/.config/home-manager/
 #+end_src
 
 ** Dependencies
-- oh-my-zsh
 - Tmux manager

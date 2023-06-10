@@ -39,12 +39,16 @@
     bat.enable = true;
     zsh = {
     	enable = true;
-	oh-my-zsh = {
+	    oh-my-zsh = {
 		    enable = true;
-   		    plugins = [ "git" ];
+   		    plugins = [ "git" "z" "rails" ];
   		    theme = "robbyrussell";
-  		    };
+  		};
+      shellAliases = {
+        ".." = "cd ..";
+         kport ="function _kport() { lsof -i tcp:\"$@\" | awk 'NR==2{print $2}' | xargs kill; };_kport";
       };
+    };
 
     direnv = {
       enable = true;
