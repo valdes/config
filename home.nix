@@ -37,6 +37,14 @@
 
   programs = {
     bat.enable = true;
+    zsh = {
+    	enable = true;
+	oh-my-zsh = {
+		    enable = true;
+   		    plugins = [ "git" ];
+  		    theme = "robbyrussell";
+  		    };
+      };
 
     direnv = {
       enable = true;
