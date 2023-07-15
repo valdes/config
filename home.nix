@@ -33,6 +33,7 @@
     jq # json cli tool
     httpie # curl
     curlie # curl
+    gnumake
   ];
 
   programs = {
