@@ -26,6 +26,7 @@
     projectile-rails
     helm-projectile
     yasnippet
+    yasnippet-snippets
     zenburn-theme
     which-key
     helm-lsp
@@ -40,6 +41,7 @@
     docker-compose-mode
     dockerfile-mode
     elm-mode
+    nix-mode
     zencoding-mode
     projectile-rails
     helm-projectile
