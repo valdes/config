@@ -34,6 +34,11 @@
     httpie # curl
     curlie # curl
     gnumake
+    emacs29
+    # documentation
+    plantuml
+    graphviz
+    texlive.combined.scheme-full
   ];
 
   programs = {

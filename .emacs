@@ -9,8 +9,6 @@
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
                          ("melpa" . "http://melpa.org/packages/")))
 
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t) ; Org-mode's repository
-
 (when (not package-archive-contents)
   (package-refresh-contents))
 
@@ -46,6 +44,7 @@
     projectile-rails
     helm-projectile
     use-package
+    plantuml-mode
     git-gutter))
 
 (mapc #'(lambda (package)
@@ -67,7 +66,8 @@
 ;; Zenburn theme
 (load-theme 'zenburn t)
 ;; enable line numbers globally
-(global-linum-mode t) 
+(when (version<= "26.0.50" emacs-version )
+  (global-display-line-numbers-mode))
 ;;
 ;; Don't show the welcome message
 ;;(setq inhibit-startup-screen t)
@@ -489,4 +489,27 @@
 ;; active Babel languages
 (org-babel-do-load-languages
 'org-babel-load-languages
-'((shell . t)))
+'((shell . t)
+  (plantuml . t)))
+
+;; Setup latex exporting
+;;
+;;
+
+(unless (boundp 'org-latex-classes)
+  (setq org-latex-classes nil))
+
+(add-to-list 'org-latex-classes
+             '("my-style"
+               "\\documentclass{./my-style}
+                 [DEFAULT-PACKAGES]
+                 [PACKAGES]
+                 [EXTRA]"
+               ("\\section{%s}" . "\\section{%s}")
+               ("\\subsection{%s}" . "\\subsection{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection{%s}")
+               ("\\paragraph{%s}" . "\\paragraph{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph{%s}")))
+
+(setq org-plantuml-jar-path (expand-file-name "/home/vals/bin/plantuml-1.2023.10.jar"))
+(add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
