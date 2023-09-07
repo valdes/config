@@ -511,5 +511,5 @@
                ("\\paragraph{%s}" . "\\paragraph{%s}")
                ("\\subparagraph{%s}" . "\\subparagraph{%s}")))
 
-(setq org-plantuml-jar-path (expand-file-name "/home/vals/bin/plantuml-1.2023.10.jar"))
+(setq org-plantuml-jar-path (expand-file-name "~/plantuml-1.2023.10.jar"))
 (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))

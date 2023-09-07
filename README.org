@@ -8,6 +8,7 @@ The next script copy the config file to its designed location
   cp .emacs ~/
   cp .tmux.conf ~/
   cp home.nix ~/.config/home-manager/
+  cp plantuml-1.2023.10.jar ~/
 #+end_src
 
 ** Dependencies
