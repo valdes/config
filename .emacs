@@ -513,3 +513,9 @@
 
 (setq org-plantuml-jar-path (expand-file-name "~/plantuml-1.2023.10.jar"))
 (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
+;; code highlighted
+(setq org-latex-listings 'minted
+      org-latex-packages-alist '(("" "minted"))
+      org-latex-pdf-process
+      '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+        "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
