@@ -15,9 +15,7 @@
 ;my packages
 (defvar myPackages
   '(;cider
-    ;clojure-mode
-    ;paredit-mode
-    ;rainbow-delimiters-mode
+    clojure-mode
     magit
     helm
     projectile
@@ -45,6 +43,7 @@
     helm-projectile
     use-package
     plantuml-mode
+    doom-modeline
     git-gutter))
 
 (mapc #'(lambda (package)
@@ -212,8 +211,13 @@
 ;;
 
 ;; global helm
-(helm-mode 1)
-(global-set-key (kbd "C-x C-f") 'helm-find-files)
+(use-package helm
+  :ensure t
+  :bind (("C-x C-f" . helm-find-files)
+	 ([f10] . helm-buffers-list)
+         ([S-f10] . helm-recentf))
+  :config
+  (helm-mode 1))
 ;; enable projectile
 (projectile-mode)
 ;; (setq helm-projectile-fuzzy-match nil)
@@ -222,7 +226,9 @@
 ;; rails projecctile
 (projectile-rails-global-mode)
 ;disable temporary gitgutter (global-git-gutter-mode +1)
-(global-set-key (kbd "C-x g") 'magit-status)
+(use-package magit
+  :ensure t
+  :bind ("C-x g" . magit-status))
 
 ;; develop
 ;; python
@@ -475,17 +481,23 @@
   (dired "/sudo::/"))
 
 ;; enable paredit-mode,rainbow in clojure-mode
-(add-hook 'clojure-mode-hook #'paredit-mode)
-(add-hook 'clojure-mode-hook #'rainbow-delimiters-mode)
-
+(use-package paredit
+  :ensure t
+  :hook
+  (clojure-mode . paredit-mode))
+(use-package rainbow-mode
+  :ensure t
+  :hook
+  (clojure-mode . rainbow-delimiters-mode))
 ;; show key binding help
 (which-key-mode)
 
 
 ;; Org Journal
-(require 'org-journal)
-(setq org-journal-dir "~/Dropbox/.org/journal/")
-
+(use-package org-journal
+  :ensure t
+  :init
+  (setq org-journal-dir "~/Dropbox/.org/journal/"))
 ;; active Babel languages
 (org-babel-do-load-languages
 'org-babel-load-languages
@@ -511,11 +523,20 @@
                ("\\paragraph{%s}" . "\\paragraph{%s}")
                ("\\subparagraph{%s}" . "\\subparagraph{%s}")))
 
-(setq org-plantuml-jar-path (expand-file-name "~/plantuml-1.2023.10.jar"))
-(add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
+(use-package plantuml-mode
+  :ensure t
+  :init
+   (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
+  :config
+  (setq org-plantuml-jar-path (expand-file-name "~/plantuml-1.2023.10.jar")))
 ;; code highlighted
 (setq org-latex-listings 'minted
       org-latex-packages-alist '(("" "minted"))
       org-latex-pdf-process
       '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
         "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+
+(use-package doom-modeline
+  :ensure t
+  :hook (after-init . doom-modeline-mode))
+(setq doom-modeline-enable-word-count t)
