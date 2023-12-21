@@ -489,8 +489,11 @@
   :ensure t
   :hook
   (clojure-mode . rainbow-delimiters-mode))
+
 ;; show key binding help
-(which-key-mode)
+(use-package which-key
+  :ensure t
+  :config (which-key-mode)1)
 
 
 ;; Org Journal
