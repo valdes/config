@@ -540,3 +540,7 @@
   :ensure t
   :hook (after-init . doom-modeline-mode))
 (setq doom-modeline-enable-word-count t)
+
+(use-package yasnippet
+  :ensure t
+  :config (yas-global-mode))
