@@ -12,46 +12,6 @@
 (when (not package-archive-contents)
   (package-refresh-contents))
 
-;my packages
-(defvar myPackages
-  '(;cider
-    clojure-mode
-    magit
-    helm
-    projectile
-    projectile-rails
-    helm-projectile
-    yasnippet
-    yasnippet-snippets
-    zenburn-theme
-    which-key
-    helm-lsp
-    lsp-ui
-    lsp-mode
-    org-journal
-    org-roam
-    emacsql-sqlite
-    org-tree-slide
-    lua-mode
-    helm-mode-manager
-    docker-compose-mode
-    dockerfile-mode
-    elm-mode
-    nix-mode
-    zencoding-mode
-    projectile-rails
-    helm-projectile
-    use-package
-    plantuml-mode
-    doom-modeline
-    git-gutter))
-
-(mapc #'(lambda (package)
-    (unless (package-installed-p package)
-      (package-install package)))
-      myPackages)
-
-
 ;; interfaz config
 ;; Turn off the toolbar
 (tool-bar-mode -1)
@@ -62,8 +22,6 @@
 ;; Turn off the scrollbar
 (scroll-bar-mode -1)
 ;;
-;; Zenburn theme
-(load-theme 'zenburn t)
 ;; enable line numbers globally
 (when (version<= "26.0.50" emacs-version )
   (global-display-line-numbers-mode))
@@ -493,7 +451,7 @@
 ;; show key binding help
 (use-package which-key
   :ensure t
-  :config (which-key-mode)1)
+  :config (which-key-mode))
 
 
 ;; Org Journal
@@ -547,3 +505,20 @@
 (use-package yasnippet
   :ensure t
   :config (yas-global-mode))
+
+(use-package projectile :ensure t)
+(use-package helm-projectile :ensure t)
+(use-package helm-lsp :ensure t)
+(use-package lsp-ui :ensure t)
+(use-package lsp-mode :ensure t)
+(use-package emacsql-sqlite :ensure t)
+(use-package helm-mode-manager :ensure t)
+(use-package docker-compose-mode :ensure t)
+(use-package dockerfile-mode :ensure t)
+(use-package nix-mode :ensure t)
+(use-package git-gutter :ensure t)
+(use-package git-gutter :ensure t)
+;; Zenburn theme
+(use-package zenburn-theme
+  :ensure t
+  :config (load-theme 'zenburn t))
