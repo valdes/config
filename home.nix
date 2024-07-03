@@ -6,6 +6,9 @@
   home.username = "vals";
   home.homeDirectory = "/home/vals";
 
+  # allow unfree software
+  nixpkgs.config.allowUnfree = true;
+
   # Packages that should be installed to the user profile.
   home.packages = with pkgs; [
   # common
@@ -96,7 +99,6 @@
     emacs29
     neovim
     vimPlugins.LazyVim
-    # vscode
     mise # manage dev environment
     lazygit
     lazydocker
@@ -105,7 +107,7 @@
     plantuml
     graphviz
     texlive.combined.scheme-full
-    # obsidian
+    obsidian
 
     # utils
     localsend   # AirDrop alternative
@@ -159,6 +161,11 @@
         gcloud.disabled = true;
         line_break.disabled = true;
       };
+    };
+
+    # unfree software
+    vscode = {
+      enable = true;
     };
   };
 
