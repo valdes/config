@@ -14,13 +14,13 @@
     curl
     tmux
     nnn
-    neofetch
+    # fastfetch
     tree
     ncdu
     direnv
     # https://github.com/ibraheemdev/modern-unix
     bat # modern cat
-    exa # ls
+    eza # ls
     duf # du
     fd # find
     ripgrep # grep
@@ -28,6 +28,8 @@
     tldr # man
     hyperfine # command-line benchmarking tool
     fzf # A command-line fuzzy finder
+    zoxide # z fast cd
+    plocate # fast locate
 
     # archives
     zip
@@ -83,6 +85,7 @@
 
     # dev
     git
+    gh # github cli client
     difftastic
     jq # json cli tool
     httpie # curl
@@ -91,10 +94,27 @@
     yq-go # yaml processer https://github.com/mikefarah/yq
     gnumake
     emacs29
+    neovim
+    vimPlugins.LazyVim
+    # vscode
+    mise # manage dev environment
+    lazygit
+    lazydocker
+    gum # iteractive shell menu creation
     # documentation
     plantuml
     graphviz
     texlive.combined.scheme-full
+    # obsidian
+
+    # utils
+    localsend   # AirDrop alternative
+    vlc
+    flameshot # screenshot tool
+    xournalpp # handwriting tool with pdf annotation support
+    pinta # quick image editing
+    alacritty
+    zellij
   ];
 
   programs = {
@@ -150,7 +170,7 @@
   # You can update Home Manager without changing this value. See
   # the Home Manager release notes for a list of state version
   # changes in each release.
-  home.stateVersion = "23.05";
+  home.stateVersion = "24.05";
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
