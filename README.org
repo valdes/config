@@ -11,5 +11,11 @@ The next script copy the config file to its designed location
   cp plantuml-1.2023.10.jar ~/
 #+end_src
 
+** Launch new home-manager config
+#+begin_src sh
+  home-manager switch
+#+end_src
+
+
 ** Dependencies
 - Tmux manager
