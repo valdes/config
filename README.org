@@ -4,7 +4,7 @@ My apps(Linux) configurations
 ** Copy configuration files
 The next script copy the config file to its designed location
 #+name: copy_configs_files
-#+begin_src sh
+#+begin_src sh :results output silent
   cp .emacs ~/
   cp .tmux.conf ~/
   cp home.nix ~/.config/home-manager/
@@ -12,7 +12,7 @@ The next script copy the config file to its designed location
 #+end_src
 
 ** Launch new home-manager config
-#+begin_src sh
+#+begin_src sh :results output silent
   home-manager switch
 #+end_src
 
