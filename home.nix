@@ -171,6 +171,7 @@
 
   # copy dot files
   home.file.".config/alacritty/alacritty.toml".source = ~/Github/config/zenburn.toml;
+  home.file.".tmux.conf".source                       =  ~/Github/config/.tmux.conf;
 
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage
