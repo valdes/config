@@ -169,6 +169,9 @@
     };
   };
 
+  # copy dot files
+  home.file.".config/alacritty/alacritty.toml".source = ~/Github/config/zenburn.toml;
+
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage
   # when a new Home Manager release introduces backwards

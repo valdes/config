@@ -13,7 +13,7 @@ The next script copy the config file to its designed location
 
 ** Launch new home-manager config
 #+begin_src sh :results output silent
-  home-manager switch
+  home-manager --impure switch
 #+end_src
 
 
