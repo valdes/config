@@ -17,7 +17,7 @@
     curl
     tmux
     nnn
-    # fastfetch
+    fastfetch
     tree
     ncdu
     direnv
