@@ -96,7 +96,7 @@
     ripgrep # recursively searches directories for a regex pattern
     yq-go # yaml processer https://github.com/mikefarah/yq
     gnumake
-    emacs29
+    emacs
     neovim
     vimPlugins.LazyVim
     mise # manage dev environment
@@ -181,7 +181,7 @@
   # You can update Home Manager without changing this value. See
   # the Home Manager release notes for a list of state version
   # changes in each release.
-  home.stateVersion = "24.05";
+  home.stateVersion = "24.11";
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
