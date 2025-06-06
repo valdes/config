@@ -33,7 +33,6 @@
     fzf # A command-line fuzzy finder
     zoxide # z fast cd
     plocate # fast locate
-    gum # add iteractivity to shell script
 
     # archives
     zip
