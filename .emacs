@@ -262,7 +262,8 @@
 )
 ;}}}
 
-;{{{ Alias some custom functions
+;{{{ Short aliases for interactive use
+;    - keep old convenience names while the implementation stays explicit
 ;
 (defalias 'stamp         'aic-dotfile-stamp)
 (defalias 'date-stamp    'aic-txtfile-stamp)
@@ -270,16 +271,41 @@
 (defalias 'encode-buffer 'aic-encode-buffer)
 (defalias 'nuke          'aic-nuke-all-buffers)
 (defalias 'org           'aic-org-index)
-;}}}
-
-;{{{ Shortcut a few commonly used functions
-;
 (defalias 'cr            'comment-region)
 (defalias 'ucr           'uncomment-region)
 (defalias 'eb            'eval-buffer)
 (defalias 'er            'eval-region)
 (defalias 'ee            'eval-expression)
 ;}}}
+
+;{{{ Named helpers for key bindings
+;    - use named commands instead of inline lambdas to keep bindings readable
+;
+(defun aic-goto-buffer-start ()
+  "Jump to the beginning of the buffer."
+  (interactive)
+  (goto-char (point-min)))
+
+(defun aic-goto-buffer-end ()
+  "Jump to the end of the buffer."
+  (interactive)
+  (goto-char (point-max)))
+
+(defun aic-kill-emacs-confirm ()
+  "Quit Emacs after confirmation."
+  (interactive)
+  (when (y-or-n-p "Quit? ")
+    (save-buffers-kill-emacs)))
+
+(defun aic-manual-current-word ()
+  "Open the manual entry for the symbol at point."
+  (interactive)
+  (manual-entry (current-word)))
+
+(defun aic-open-org-notes ()
+  "Open the default Org notes file."
+  (interactive)
+  (find-file "~/Dropbox/.org/notes.org"))
 ;}}}
 
 
@@ -321,22 +347,17 @@
 (global-set-key (kbd "<M-down>") 'menu-bar-mode)
 
 ;; Jump to the start/end of the document with C-PgUP/DN
-(global-set-key [C-prior] (lambda () (interactive) (goto-char (point-min))))
-(global-set-key [C-next]  (lambda () (interactive) (goto-char (point-max))))
+(global-set-key [C-prior] 'aic-goto-buffer-start)
+(global-set-key [C-next]  'aic-goto-buffer-end)
 
 ;; Require C-x C-c prompt, no accidental quits
-(global-set-key [(control x) (control c)] 
-  (function 
-   (lambda () (interactive) 
-     (cond ((y-or-n-p "Quit? ")
-       (save-buffers-kill-emacs)))))
-)
+(global-set-key (kbd "C-x C-c") 'aic-kill-emacs-confirm)
 ;}}}
 
 ;{{{ Fn bindings
 ;
-(global-set-key  [f1]  (lambda () (interactive) (manual-entry (current-word))))
-(global-set-key  [f2]  (lambda () (interactive) (find-file "~/Dropbox/.org/notes.org")))
+(global-set-key  [f1]  'aic-manual-current-word)
+(global-set-key  [f2]  'aic-open-org-notes)
 (global-set-key  [f3]  'aic-org-agenda)           ; Function defined previously
 ;(global-set-key  [f4]  'aic-visit-ansi-term)      ; Function defined previously
 ;(global-set-key [f5]  'aic-fold-toggle-fold)     ; Todo: Toggle all folds
