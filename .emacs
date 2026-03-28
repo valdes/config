@@ -9,9 +9,6 @@
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
 
-(when (not package-archive-contents)
-  (package-refresh-contents))
-
 ;; interfaz config
 ;; Turn off the toolbar
 (tool-bar-mode -1)
@@ -23,34 +20,14 @@
 (scroll-bar-mode -1)
 ;;
 ;; enable line numbers globally
-(when (version<= "26.0.50" emacs-version )
-  (global-display-line-numbers-mode))
+(global-display-line-numbers-mode 1)
 ;;
 ;; Don't show the welcome message
 ;;(setq inhibit-startup-screen t)
 ;;(setq initial-scratch-message nil)
 ;;
-;; Shut off message buffer
-(setq message-log-max nil)
-(kill-buffer "*Messages*")
 ;; Show column number in modeline
 (setq column-number-mode t)
-;; Modeline setup
-;;   - somewhat cleaner than default
-(setq default-mode-line-format
-      '("-"
-       mode-line-mule-info
-       mode-line-modified
-       mode-line-frame-identification
-       mode-line-buffer-identification
-       "  "
-       global-mode-string
-       "   %[(" mode-name mode-line-process minor-mode-alist "%n"")%]--"
-       (line-number-mode "L%l--")
-       (column-number-mode "C%c--")
-       (-3 . "%p")
-       "-%-")
-)
 ;; Answer y or n instead of yes or no at prompts
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -176,13 +153,24 @@
          ([S-f10] . helm-recentf))
   :config
   (helm-mode 1))
-;; enable projectile
-(projectile-mode)
-;; (setq helm-projectile-fuzzy-match nil)
-(require 'helm-projectile)
-(helm-projectile-on)
-;; rails projecctile
-(projectile-rails-global-mode)
+
+(use-package projectile
+  :ensure t
+  :config
+  (projectile-mode 1))
+
+(use-package helm-projectile
+  :ensure t
+  :after (helm projectile)
+  :config
+  (helm-projectile-on))
+
+(use-package projectile-rails
+  :ensure t
+  :after projectile
+  :config
+  (projectile-rails-global-mode))
+
 ;disable temporary gitgutter (global-git-gutter-mode +1)
 (use-package magit
   :ensure t
@@ -210,8 +198,6 @@
 (defun aic-reload-dot-emacs ()
   "Reload user configuration from .emacs"
   (interactive)
-  ;; Fails on killing the Messages buffer, workaround:
-  (get-buffer-create "*Messages*")
   (load-file "~/.emacs")
 )
 (defun aic-edit-dot-emacs ()
@@ -401,15 +387,13 @@
 ;; Remember frames
 ;;   - $ emacsclient -e '(make-remember-frame)'
 ;; Automatic closing of remember frames
-(defadvice org-capture-finalize (after my-delete-capture-frame activate)
+(defun aic-delete-capture-frame (&rest _)
   "Delete the frame after `capture-finalize'."
   (when (frame-parameter nil 'my-org-capture)
     (delete-frame)))
 
-(defadvice org-capture-destroy (after my-delete-capture-frame activate)
-  "Delete the frame after `capture-destroy'."
-  (when (frame-parameter nil 'my-org-capture)
-    (delete-frame)))
+(advice-add 'org-capture-finalize :after #'aic-delete-capture-frame)
+(advice-add 'org-capture-destroy :after #'aic-delete-capture-frame)
 
 ;; Org-remember splits windows, force it to a single window
 ;; Initialization of remember frames
@@ -444,7 +428,7 @@
   :ensure t
   :hook
   (clojure-mode . paredit-mode))
-(use-package rainbow-mode
+(use-package rainbow-delimiters
   :ensure t
   :hook
   (clojure-mode . rainbow-delimiters-mode))
@@ -507,8 +491,6 @@
   :ensure t
   :config (yas-global-mode))
 
-(use-package projectile :ensure t)
-(use-package helm-projectile :ensure t)
 (use-package helm-lsp :ensure t)
 (use-package lsp-ui :ensure t)
 (use-package lsp-mode :ensure t)
@@ -516,7 +498,6 @@
 (use-package docker-compose-mode :ensure t)
 (use-package dockerfile-mode :ensure t)
 (use-package nix-mode :ensure t)
-(use-package git-gutter :ensure t)
 (use-package git-gutter :ensure t)
 ;; Zenburn theme
 (use-package zenburn-theme
