@@ -329,9 +329,14 @@
 (global-set-key  [f1]  'aic-manual-current-word)
 (global-set-key  [f2]  'aic-open-org-notes)
 (global-set-key  [f3]  'aic-org-agenda)           ; Function defined previously
+(global-set-key  [f4]  'make-remember-frame)
+(global-set-key  [f5]  'org-tree-slide-mode)
+(global-set-key  [f6]  'display-line-numbers-mode)
 (global-set-key  [f7]  'htmlfontify-buffer)
 (global-set-key  [f8]  'ispell-buffer)
 (global-set-key  [f9]  'ispell-change-dictionary) ; Switching 'en_US' and 'hr' often
+(global-set-key [f10]  'menu-bar-mode)
+(global-set-key [f11]  'toggle-frame-maximized)
 (global-set-key  [f12] 'kill-buffer)
 ;}}}
 ;}}}
