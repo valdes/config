@@ -7,7 +7,7 @@
 
 (require 'package)
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-                         ("melpa" . "http://melpa.org/packages/")))
+                         ("melpa" . "https://melpa.org/packages/")))
 
 (when (not package-archive-contents)
   (package-refresh-contents))
@@ -429,6 +429,7 @@
 
 ;; Org presentations
 (use-package org-tree-slide
+  :ensure t
   :custom
   (org-image-actual-width nil))
 
@@ -511,7 +512,6 @@
 (use-package helm-lsp :ensure t)
 (use-package lsp-ui :ensure t)
 (use-package lsp-mode :ensure t)
-(use-package emacsql-sqlite :ensure t)
 (use-package helm-mode-manager :ensure t)
 (use-package docker-compose-mode :ensure t)
 (use-package dockerfile-mode :ensure t)
