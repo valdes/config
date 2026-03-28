@@ -9,25 +9,22 @@
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
 
-;; interfaz config
+;; Basic UI defaults
 ;; Turn off the toolbar
 (tool-bar-mode -1)
-;;
+
 ;; Turn off the menu bar
 (menu-bar-mode -1)
-;;
+
 ;; Turn off the scrollbar
 (scroll-bar-mode -1)
-;;
+
 ;; enable line numbers globally
 (global-display-line-numbers-mode 1)
-;;
-;; Don't show the welcome message
-;;(setq inhibit-startup-screen t)
-;;(setq initial-scratch-message nil)
-;;
+
 ;; Show column number in modeline
 (setq column-number-mode t)
+
 ;; Answer y or n instead of yes or no at prompts
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -62,15 +59,14 @@
 
 ;; Save after a certain amount of time.
 (setq auto-save-timeout 1800)
-;;
-;; Change backup behavior to save in a specified directory
+
+;; Keep backups under ~/.emacs.d instead of scattering ~ files everywhere.
 (setq backup-directory-alist '(("." . "~/.emacs.d/saves/"))
- backup-by-copying      t
- version-control        t
- delete-old-versions    t
- kept-new-versions      6
- kept-old-versions      2
-)
+      backup-by-copying t
+      version-control t
+      delete-old-versions t
+      kept-new-versions 6
+      kept-old-versions 2)
 
 ;; Keep bookmarks in the load path
 (setq bookmark-default-file "~/.emacs.d/emacs-bookmarks")
@@ -81,10 +77,9 @@
 
 ;; Default major mode
 (setq default-major-mode 'text-mode)
-;;
 ;; Wrap lines at 70 in text-mode
 (add-hook 'text-mode-hook 'turn-on-auto-fill)
-;;
+
 ;; Text files end in new lines.
 (setq require-final-newline t)
 
@@ -102,12 +97,12 @@
 ;; Stop cursor from blinking
 (blink-cursor-mode nil)
 
-;; Accelerate the cursor when scrolling
+;; Load optional cursor acceleration support when available.
 (load "accel" t t)
-;;
+
 ;; Start scrolling when 2 lines from top/bottom
 (setq scroll-margin 2)
-;;
+
 ;; Fix the scrolling on jumps between windows
 (setq scroll-conservatively 5)
 
@@ -121,9 +116,6 @@
 ;; Kill (and paste) text from read-only buffers
 (setq kill-read-only-ok 1)
 
-;; Partially integrate the kill-ring and X cut-buffer
-;(setq x-select-enable-clipboard t)
-
 ;; Copy/paste with accentuation intact
 (setq selection-coding-system 'compound-text-with-extensions)
 
@@ -132,20 +124,19 @@
 ;}}}
 ;}}}
 
-;{{{ Settings for various modes
-;    - major modes for editing code and other formats are defined below
+;{{{ Built-in editing behavior
+;    - core behavior provided by Emacs itself
 ;
 ;; Auto Compression
 ;;   - edit files in compressed archives
 (auto-compression-mode 1)
 ;}}}
 
-;; globals tools
-;;Start server
+;; Global tools
+;; Start the server for emacsclient.
 (server-mode 1)
-;;
 
-;; global helm
+;; Completion and project navigation
 (use-package helm
   :ensure t
   :bind (("C-x C-f" . helm-find-files)
@@ -176,20 +167,6 @@
   :ensure t
   :bind ("C-x g" . magit-status))
 
-;; develop
-;; python
-;;(elpy-enable)
-;;(elpy-use-ipython)
-;; use flycheck not flymake with elpy
-;;(when (require 'flycheck nil t)
-;;  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-;;  (add-hook 'elpy-mode-hook 'flycheck-mode))
-;; enable autopep8 formatting on save
-;;(require 'py-autopep8)
-;;(add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
-
-
-
 ;{{{ Custom functions
 
 ;{{{ Reload or edit .emacs on the fly
@@ -198,13 +175,12 @@
 (defun aic-reload-dot-emacs ()
   "Reload user configuration from .emacs"
   (interactive)
-  (load-file "~/.emacs")
-)
+  (load-file "~/.emacs"))
+
 (defun aic-edit-dot-emacs ()
   "Edit user configuration in .emacs"
   (interactive)
-  (find-file "~/.emacs")
-)
+  (find-file "~/.emacs"))
 ;}}}
 
 ;{{{ Timestamp function, for public dotfiles
@@ -213,28 +189,26 @@
 (defun aic-dotfile-stamp ()
   "Insert time stamp at point."
   (interactive)
-  (insert "Updated on: " (format-time-string "%b %e, %H:%M:%S %Z %Y" nil nil))
-)
+  (insert "Updated on: " (format-time-string "%b %e, %H:%M:%S %Z %Y" nil nil)))
+
 (defun aic-txtfile-stamp ()
   "Insert date at point."
   (interactive)
-  (insert (format-time-string "%d.%m.%Y %H:%M"))
-)
+  (insert (format-time-string "%d.%m.%Y %H:%M")))
 ;}}}
 
-;{{{ Quick acces to coding functions
+;{{{ Quick access to coding functions
 ;    - I deal with utf8, latin-2 and cp1250
 ;
 (defun aic-recode-buffer ()
   "Define the coding system for a file."
   (interactive)
-  (call-interactively 'set-buffer-file-coding-system)
-)
+  (call-interactively 'set-buffer-file-coding-system))
+
 (defun aic-encode-buffer ()
   "Revisit the buffer with another coding system."
   (interactive)
-  (call-interactively 'revert-buffer-with-coding-system)
-)
+  (call-interactively 'revert-buffer-with-coding-system))
 ;}}}
 
 ;{{{ Kill all buffers except scratch
@@ -243,23 +217,21 @@
   "Kill all buffers, leaving *scratch* only."
   (interactive)
   (mapcar (lambda (x) (kill-buffer x)) (buffer-list))
-  (delete-other-windows)
-)
+  (delete-other-windows))
 ;}}}
 
-;{{{ Quick access to OrgMode and the OrgMode agenda
-;    - org-mode configuration defined below
+;{{{ Quick access to Org mode files and agenda
+;    - convenience wrappers around built-in Org commands
 ;
 (defun aic-org-index ()
-   "Show the main org file."
-   (interactive)
-   (find-file "~/Dropbox/.org/index.org")
-)
+  "Show the main org file."
+  (interactive)
+  (find-file "~/Dropbox/.org/index.org"))
+
 (defun aic-org-agenda ()
   "Show the org-mode agenda."
   (interactive)
-  (call-interactively 'org-agenda-list)
-)
+  (call-interactively 'org-agenda-list))
 ;}}}
 
 ;{{{ Short aliases for interactive use
@@ -313,7 +285,6 @@
 ;    - with switched Caps_Lock and Control_L keys system wide
 
 ;{{{ Main bindings
-;
 ;; C-w to backward kill for compatibility (and ease of use)
 (global-set-key "\C-w"     'backward-kill-word)
 ;; ...and then provide alternative for cutting
@@ -355,33 +326,28 @@
 ;}}}
 
 ;{{{ Fn bindings
-;
 (global-set-key  [f1]  'aic-manual-current-word)
 (global-set-key  [f2]  'aic-open-org-notes)
 (global-set-key  [f3]  'aic-org-agenda)           ; Function defined previously
-;(global-set-key  [f4]  'aic-visit-ansi-term)      ; Function defined previously
-;(global-set-key [f5]  'aic-fold-toggle-fold)     ; Todo: Toggle all folds
-;(global-set-key  [f6]  'linum-mode)               ; Toggle line numbering
 (global-set-key  [f7]  'htmlfontify-buffer)
 (global-set-key  [f8]  'ispell-buffer)
 (global-set-key  [f9]  'ispell-change-dictionary) ; Switching 'en_US' and 'hr' often
-;(global-set-key [f10]                            ; Quick menu by default
-;(global-set-key  [f11] 'speedbar)
 (global-set-key  [f12] 'kill-buffer)
 ;}}}
 ;}}}
 
-;{{{ OrgMode
-;; Settings
+;{{{ Org mode
+;; Core Org settings
 (setq org-directory "~/Dropbox/.org/")
 (setq org-default-notes-file (concat org-directory "/notes.org"))
 (setq org-log-done 'time)
 
-;; Files that are included in org-mode agenda
+;; Files included in the agenda.
 (setq org-agenda-files
- (list "~/Dropbox/.org/index.org" "~/Dropbox/.org/personal.org" "~/Dropbox/.org/computers.org")
-)
-					;}}}
+      (list "~/Dropbox/.org/index.org"
+            "~/Dropbox/.org/personal.org"
+            "~/Dropbox/.org/computers.org"))
+;}}}
 
 ;{{{ Org Roam
 (setq org-roam-v2-ack t)
@@ -394,20 +360,14 @@
          ("C-c n g" . org-roam-graph)
          ("C-c n i" . org-roam-node-insert)
          ("C-c n c" . org-roam-capture)
-         ;; Dailies
          ("C-c n j" . org-roam-dailies-capture-today))
-;  :bind-keymap
-;	 ("C-c n d" . org-roam-dailies-map)
   :config
   (org-roam-db-autosync-mode)
-  ;; If using org-roam-protocol
   (require 'org-roam-protocol))
 ;}}}
 
-;{{{ OrgCapture
-;; Remember frames
-;;   - $ emacsclient -e '(make-remember-frame)'
-;; Automatic closing of remember frames
+;{{{ Org capture helpers
+;; Create and clean up dedicated frames for capture launched via emacsclient.
 (defun aic-delete-capture-frame (&rest _)
   "Delete the frame after `capture-finalize'."
   (when (frame-parameter nil 'my-org-capture)
@@ -416,10 +376,9 @@
 (advice-add 'org-capture-finalize :after #'aic-delete-capture-frame)
 (advice-add 'org-capture-destroy :after #'aic-delete-capture-frame)
 
-;; Org-remember splits windows, force it to a single window
-;; Initialization of remember frames
+;; Force org-capture to stay in a single-purpose frame.
 (defun make-remember-frame ()
- "Create a new frame and run `org-capture'."
+  "Create a new frame and run `org-capture'."
   (interactive)
   (select-frame (make-frame '((my-org-capture . t) (width . 80) (height . 10))))
   (delete-other-windows)
@@ -430,7 +389,7 @@
       ;; delete the newly-created frame in this scenario.
       (error (when (equal err '(error "Abort"))
                (delete-frame))))))
-					;}}}
+;}}}
 
 ;; Org presentations
 (use-package org-tree-slide
@@ -438,13 +397,13 @@
   :custom
   (org-image-actual-width nil))
 
-;; sudo dired
+;; Browse files as root when needed.
 (require 'tramp)
 (defun sudired ()
   (interactive)
   (dired "/sudo::/"))
 
-;; enable paredit-mode,rainbow in clojure-mode
+;; Editing helpers
 (use-package paredit
   :ensure t
   :hook
@@ -454,7 +413,7 @@
   :hook
   (clojure-mode . rainbow-delimiters-mode))
 
-;; show key binding help
+;; Show available key bindings after a prefix key.
 (use-package which-key
   :ensure t
   :config (which-key-mode))
@@ -465,15 +424,14 @@
   :ensure t
   :init
   (setq org-journal-dir "~/Dropbox/.org/journal/"))
-;; active Babel languages
-(org-babel-do-load-languages
-'org-babel-load-languages
-'((shell . t)
-  (plantuml . t)))
 
-;; Setup latex exporting
-;;
-;;
+;; Enable Org Babel languages used in this setup.
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((shell . t)
+   (plantuml . t)))
+
+;; LaTeX export
 
 (unless (boundp 'org-latex-classes)
   (setq org-latex-classes nil))
@@ -493,10 +451,11 @@
 (use-package plantuml-mode
   :ensure t
   :init
-   (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
+  (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
   :config
   (setq org-plantuml-jar-path (expand-file-name "~/plantuml-1.2023.10.jar")))
-;; code highlighted
+
+;; Use minted for syntax-highlighted PDF export.
 (setq org-latex-listings 'minted
       org-latex-packages-alist '(("" "minted"))
       org-latex-pdf-process
