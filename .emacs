@@ -433,7 +433,9 @@
 ;; Enable Org Babel languages used in this setup.
 (org-babel-do-load-languages
  'org-babel-load-languages
- '((shell . t)
+ '((C . t)
+   (shell . t)
+   (zig . t)
    (plantuml . t)))
 
 ;; LaTeX export
