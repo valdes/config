@@ -489,15 +489,40 @@
   (when (fboundp 'clang-format-buffer)
     (add-hook 'before-save-hook #'clang-format-buffer nil t)))
 
+;; Zig development
+(defun aic-zig-mode-setup ()
+  "Set sensible defaults for Zig development."
+  (setq-local indent-tabs-mode nil)
+  (setq-local tab-width 4)
+  (unless (local-variable-p 'compile-command)
+    (setq-local compile-command
+                (if (locate-dominating-file default-directory "build.zig")
+                    "zig build"
+                  (if buffer-file-name
+                      (format "zig run %s"
+                              (shell-quote-argument
+                               (file-name-nondirectory buffer-file-name)))
+                    "zig build"))))
+  (when (fboundp 'eglot-ensure)
+    (eglot-ensure))
+  (when (fboundp 'eglot-format-buffer)
+    (add-hook 'before-save-hook #'eglot-format-buffer nil t)))
+
+(use-package zig-mode
+  :ensure t)
+
 (use-package eglot
   :ensure nil
   :hook ((c-mode . aic-c-mode-setup)
          (c-ts-mode . aic-c-mode-setup)
          (c++-mode . aic-c-mode-setup)
-         (c++-ts-mode . aic-c-mode-setup))
+         (c++-ts-mode . aic-c-mode-setup)
+         (zig-mode . aic-zig-mode-setup))
   :config
   (add-to-list 'eglot-server-programs
-               '((c-mode c-ts-mode c++-mode c++-ts-mode) . ("clangd"))))
+               '((c-mode c-ts-mode c++-mode c++-ts-mode) . ("clangd")))
+  (add-to-list 'eglot-server-programs
+               '(zig-mode . ("zls"))))
 
 (use-package clang-format
   :ensure t)
