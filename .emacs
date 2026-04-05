@@ -476,9 +476,32 @@
   :ensure t
   :config (yas-global-mode))
 
-(use-package helm-lsp :ensure t)
-(use-package lsp-ui :ensure t)
-(use-package lsp-mode :ensure t)
+;; C and C++ development
+(defun aic-c-mode-setup ()
+  "Set sensible defaults for C and C++ development."
+  (setq-local c-basic-offset 4)
+  (setq-local indent-tabs-mode nil)
+  (setq-local tab-width 4)
+  (unless (local-variable-p 'compile-command)
+    (setq-local compile-command "make -k "))
+  (when (fboundp 'eglot-ensure)
+    (eglot-ensure))
+  (when (fboundp 'clang-format-buffer)
+    (add-hook 'before-save-hook #'clang-format-buffer nil t)))
+
+(use-package eglot
+  :ensure nil
+  :hook ((c-mode . aic-c-mode-setup)
+         (c-ts-mode . aic-c-mode-setup)
+         (c++-mode . aic-c-mode-setup)
+         (c++-ts-mode . aic-c-mode-setup))
+  :config
+  (add-to-list 'eglot-server-programs
+               '((c-mode c-ts-mode c++-mode c++-ts-mode) . ("clangd"))))
+
+(use-package clang-format
+  :ensure t)
+
 (use-package helm-mode-manager :ensure t)
 (use-package docker-compose-mode :ensure t)
 (use-package dockerfile-mode :ensure t)
