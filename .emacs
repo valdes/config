@@ -435,7 +435,7 @@
  'org-babel-load-languages
  '((C . t)
    (shell . t)
-   (zig . t)
+   ;;(zig . t)
    (plantuml . t)))
 
 ;; LaTeX export
