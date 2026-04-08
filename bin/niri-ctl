@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+# Developer Workflow for Niri WM using IPC
+# Requires: niri, jq, fzf
+
+ACTION="$1"
+ARG="$2"
+
+# Define monitor outputs (adjust to your setup)
+MONITOR_MAIN=$(niri msg --json outputs | jq -r '.[] | select(.model | test("27")) | .name')    # 27" landscape (main)
+MONITOR_PORTRAIT=$(niri msg --json outputs | jq -r '.[] | select(.model | test("24")) | .name') # 24" portrait
+MONITOR_SECONDARY="eDP-1" # Laptop or other screen
+
+PROJECTS_DIR="$HOME/work"
+
+TERMINAL="alacritty"
+EDITOR="code"
+IDE="idea"
+BROWSER="microsoft-edge"
+
+
+launch_and_move() {
+     local monitor=$1
+     local workspace=$2
+     shift 2 # Remove monitor and workspace from the argument list
+     local app_command=("$@")
+        # Launch the application in the background
+     "${app_command[@]}" &
+        # Unreliable, but centralized. See recommendation #2.
+     sleep 0.7
+        # Move the new window
+     [ -n "$monitor" ] && niri msg action move-window-to-monitor "$monitor"
+     [ -n "$workspace" ] && niri msg action move-window-to-workspace "$workspace"
+}
+
+
+setup_app_on_workspace() {
+    local ws_name=$1
+    local monitor=$2
+    shift 2
+    local app_command=("$@")
+
+    # Get all existing named workspaces directly.
+    local existing_workspaces
+    existing_workspaces=$(niri msg --json workspaces | jq -r '.[] | .name | select(. != null)')
+
+    # Check if the desired workspace name already exists.
+    if echo "$existing_workspaces" | grep -q -w "$ws_name"; then
+        # If it exists, focus it and move it to the desired monitor.
+        niri msg action focus-workspace "$ws_name"
+        niri msg action move-workspace-to-monitor "$monitor"
+    else
+        # Otherwise, launch the app, create the workspace by moving the new window, and name it.
+        "${app_command[@]}" &
+        sleep 0.7 # Wait for window to appear
+        niri msg action move-window-to-monitor "$monitor"
+        niri msg action move-window-to-workspace-down # This creates the new workspace
+        niri msg action set-workspace-name "$ws_name"
+    fi
+}
+
+if [ -z "$MONITOR_MAIN" ] || [ -z "$MONITOR_PORTRAIT" ]; then
+     echo "Error: Main monitor not detected"
+     exit 1
+fi
+
+case "$ACTION" in
+# Switch workspace
+ws)
+  # Fetch both outputs (for model names) and workspaces JSON.
+  OUTPUTS_JSON=$(niri msg --json outputs)
+  # Use jq to combine them into a descriptive list for fuzzel.
+  WS_LIST=$(niri msg --json workspaces | jq --argjson outputs "$OUTPUTS_JSON" -r '
+    .[] |
+    # For each workspace, look up its output device in the outputs JSON to get the model name.
+    ($outputs[.output].model) as $model |
+    # Format the string as "Model Name:Workspace Identifier"
+    "\($model):\(.name // (.idx | tostring))"
+  ')
+
+  # Use fuzzel to select a workspace from the list
+  SELECTED_WS=$(echo -n "$WS_LIST" | fuzzel --dmenu --width=80 --prompt="Switch to workspace: ")
+
+  # If a selection was made, focus the correct monitor, then the correct workspace.
+  if [ -n "$SELECTED_WS" ]; then
+    TARGET_MODEL=$(echo "$SELECTED_WS" | cut -d: -f1)
+    TARGET_WS_ID=$(echo "$SELECTED_WS" | cut -d: -f2-)
+
+    # Find the system name of the monitor from its more descriptive model name.
+    TARGET_MONITOR_NAME=$(echo "$OUTPUTS_JSON" | jq -r --arg model "$TARGET_MODEL" '
+      . as $outputs | keys[] | select($outputs[.].model == $model)
+    ')
+
+    # First, focus the correct monitor.
+    niri msg action focus-monitor "$TARGET_MONITOR_NAME"
+    # Then, focus the workspace on that monitor.
+    niri msg action focus-workspace "$TARGET_WS_ID"
+  fi
+  ;;
+
+# Switch display
+'display')
+  # Get the JSON object of all outputs.
+  OUTPUTS_JSON=$(niri msg --json outputs)
+  # Get a list of all monitor model names.
+  MODEL_LIST=$(echo "$OUTPUTS_JSON" | jq -r '.[] | .model')
+
+  # Use fuzzel to select a model.
+  SELECTED_MODEL=$(echo -n "$MODEL_LIST" | fuzzel --dmenu --width=80 --prompt="Switch to display: ")
+
+  # If a selection was made, find the corresponding system name and focus it.
+  if [ -n "$SELECTED_MODEL" ]; then
+    # Find the system name for the selected model.
+    TARGET_MONITOR_NAME=$(echo "$OUTPUTS_JSON" | jq -r --arg model "$SELECTED_MODEL" '
+      . as $outputs | keys[] | select($outputs[.].model == $model)
+    ')
+    # Focus the monitor.
+    niri msg action focus-monitor "$TARGET_MONITOR_NAME"
+  fi
+  ;;
+
+# Move focused window to workspace
+move)
+  # Fetch both outputs (for model names) and workspaces JSON.
+  OUTPUTS_JSON=$(niri msg --json outputs)
+  # Use jq to combine them into a descriptive list for fuzzel.
+  WS_LIST=$(niri msg --json workspaces | jq --argjson outputs "$OUTPUTS_JSON" -r '
+    .[] |
+    # For each workspace, look up its output device in the outputs JSON to get the model name.
+    ($outputs[.output].model) as $model |
+    # Format the string as "Model Name:Workspace Identifier"
+    "\($model):\(.name // (.idx | tostring))"
+  ')
+
+  # Use fuzzel to select a destination workspace from the list
+  SELECTED_WS=$(echo -n "$WS_LIST" | fuzzel --dmenu --width=80 --prompt="Move window to workspace: ")
+
+  # If a selection was made, move the window to the correct display, then the correct workspace.
+  if [ -n "$SELECTED_WS" ]; then
+    TARGET_MODEL=$(echo "$SELECTED_WS" | cut -d: -f1)
+    TARGET_WS_ID=$(echo "$SELECTED_WS" | cut -d: -f2-)
+
+    # Find the system name of the monitor from its more descriptive model name.
+    TARGET_MONITOR_NAME=$(echo "$OUTPUTS_JSON" | jq -r --arg model "$TARGET_MODEL" '
+      . as $outputs | keys[] | select($outputs[.].model == $model)
+    ')
+
+    # Per user instruction: move to monitor first, then to workspace.
+    niri msg action move-window-to-monitor "$TARGET_MONITOR_NAME"
+    niri msg action move-window-to-workspace "$TARGET_WS_ID"
+  fi
+  ;;
+
+# Rename the current workspace
+'rename-ws')
+  NEW_NAME=$(fuzzel --dmenu --prompt="Enter new workspace name: ")
+  if [ -n "$NEW_NAME" ]; then
+    niri msg action set-workspace-name "$NEW_NAME"
+  fi
+  ;;
+
+# Launch apps
+launch)
+  case "$ARG" in
+  term)
+    launch_and_move "$MONITOR_PORTRAIT" "" "$TERMINAL"
+    ;;
+  code) "$EDITOR" & ;;
+  browser)
+    launch_and_move "$MONITOR_PORTRAIT" "" "$BROWSER"
+    ;;
+  chat) slack & ;;
+  *)
+    echo "Unknown app: $ARG"
+    ;;
+  esac
+  ;;
+
+# Fuzzy focus window
+focus)
+  WIN_ID=$(niri msg --json windows | jq -r '.[] | "\(.id): \(.title) [\(.app_id)]"' | fuzzel --dmenu --width=80 | cut -d: -f1)
+  [ -n "$WIN_ID" ] && niri msg action focus-window --id "$WIN_ID"
+  ;;
+
+# Preset layout for coding
+preset)
+  # Example: open terminal in WS1, editor in WS2, browser in WS3
+  "$TERMINAL" &
+  sleep 0.5 && niri msg action move-window-to-workspace 1
+  "$EDITOR" &
+  sleep 0.5 && niri msg action move-window-to-workspace 2
+  "$BROWSER" &
+  sleep 0.5 && niri msg action move-window-to-workspace 3
+  ;;
+
+# Event stream for custom status bar
+events)
+  niri msg --json event-stream
+  ;;
+
+project)
+  PROJECT=$(find "$PROJECTS_DIR" -mindepth 1 -maxdepth 2 -type d | fuzzel --dmenu --width=80 --prompt="Select project: ")
+  if [ -n "$PROJECT" ]; then
+    PROJECT_NAME=$(basename "$PROJECT")
+
+    WS_MAIN="${PROJECT_NAME}-main"
+    WS_TERM="${PROJECT_NAME}-term"
+    WS_BROWSER="${PROJECT_NAME}-browser"
+
+    # Use the new function to set up each app and its workspace.
+    setup_app_on_workspace "$WS_MAIN" "$MONITOR_MAIN" "$IDE" "$PROJECT"
+    setup_app_on_workspace "$WS_TERM" "$MONITOR_PORTRAIT" "$TERMINAL" --working-directory "$PROJECT"
+    setup_app_on_workspace "$WS_BROWSER" "$MONITOR_SECONDARY" "$BROWSER"
+
+    # Focus the main project workspace to leave things in a predictable state.
+    niri msg action focus-workspace "$WS_MAIN"
+
+    echo "Project preset applied: $PROJECT_NAME"
+  else
+    echo "No project selected."
+  fi
+  ;;
+
+*)
+  echo "Usage: $0 {ws|move|launch|focus|preset|events} [arg]"
+  ;;
+esac

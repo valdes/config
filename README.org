@@ -10,6 +10,7 @@ The next script copy the config file to its designed location
   cp home.nix ~/.config/home-manager/
   cp -r niri ~/.config/
   cp -r waybar ~/.config/
+  cp -r bin/* ~/bin/
   cp plantuml-1.2023.10.jar ~/
 #+end_src
 
