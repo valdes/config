@@ -11,7 +11,7 @@ environment {
 
 xwayland-satellite {
     // off
-    path "/home/vals/Downloads/xwayland-satellite-main/target/debug/xwayland-satellite"
+    path "xwayland-satellite"
 }
 
 // workspaces
@@ -581,6 +581,15 @@ binds {
     Mod+Shift+Page_Up   { move-workspace-up; }
     Mod+Shift+U         { move-workspace-down; }
     Mod+Shift+I         { move-workspace-up; }
+
+    Mod+Shift+X hotkey-overlay-title="Unset Workspace Name" { spawn "niri" "msg" "action" "unset-workspace-name"; }
+    Mod+P hotkey-overlay-title="Run niri-ctl project" { spawn-sh "niri-ctl project"; }
+    Mod+Shift+N hotkey-overlay-title="Rename Workspace" { spawn-sh "niri-ctl rename-ws"; }
+    Mod+Alt+F hotkey-overlay-title="Focus Project Workspace" { spawn-sh "niri-ctl focus"; }
+    Mod+Shift+W hotkey-overlay-title="Focus Specific Workspace" { spawn-sh "niri-ctl ws"; }
+    Mod+Shift+M hotkey-overlay-title="Move current window to Specific Workspace" { spawn-sh "niri-ctl move"; }
+    Mod+Shift+D hotkey-overlay-title="Focus Display" { spawn-sh "niri-ctl display"; }
+
 
     // You can bind mouse wheel scroll ticks using the following syntax.
     // These binds will change direction based on the natural-scroll setting.
