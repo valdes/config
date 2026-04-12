@@ -128,7 +128,7 @@
     playerctl
     brightnessctl
     pamixer
-    blueberry
+    blueman
     impala
     wiremix
     xwayland-satellite
@@ -159,8 +159,10 @@
 
     git = {
       enable = true;
-      aliases = {
-        st = "status";
+      settings = {
+        alias = {
+          st = "status";
+        };
       };
       includes = [
         { path = "~/Dropbox/config/.gitconfig"; }
@@ -185,8 +187,8 @@
   };
 
   # copy dot files
-  home.file.".config/alacritty/alacritty.toml".source = ~/Github/config/zenburn.toml;
-  home.file.".tmux.conf".source                       =  ~/Github/config/.tmux.conf;
+  home.file.".config/alacritty/alacritty.toml".source = ./zenburn.toml;
+  home.file.".tmux.conf".source                       = ./.tmux.conf;
 
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage

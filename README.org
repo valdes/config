@@ -3,7 +3,12 @@ Personal Linux workstation configuration.
 
 ** Workflow
 
-Check prerequisites:
+Bootstrap Home Manager with the repo flake:
+#+begin_src sh :results output silent
+  make prepare
+#+end_src
+
+Check prerequisites for the non-bootstrap targets:
 #+begin_src sh :results output silent
   make doctor
 #+end_src
@@ -66,4 +71,5 @@ Example:
 ** Notes
 
 - =make sync= installs the wallpaper to =~/.local/share/backgrounds/background.jpg=.
+- =make prepare= runs Home Manager directly from this repo using a =path:= flake reference and uses =-b backup= to preserve pre-existing conflicting files on first activation.
 - =make switch= runs =home-manager --impure switch=.

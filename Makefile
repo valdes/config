@@ -6,12 +6,16 @@ CONFIG_DIR := $(HOME_DIR)/.config
 BIN_DIR := $(HOME_DIR)/bin
 LOCAL_BIN_DIR := $(HOME_DIR)/.local/bin
 BACKGROUND_DIR := $(HOME_DIR)/.local/share/backgrounds
+HOME_MANAGER_DIR := $(CONFIG_DIR)/home-manager
+HOME_MANAGER_REF ?= home-manager/master
+NIX_FLAKE_FLAGS := --extra-experimental-features "nix-command flakes"
 
-.PHONY: help sync sync-core sync-hidden sync-bin switch apply reload-waybar toggle-waybar status doctor check
+.PHONY: help sync sync-core sync-hidden sync-bin prepare switch apply reload-waybar toggle-waybar status doctor check
 
 help:
 	@printf "%s\n" \
 		"Targets:" \
+		"  make prepare        Bootstrap Home Manager using the repo flake" \
 		"  make sync           Copy repo-managed files into place" \
 		"  make switch         Run home-manager --impure switch" \
 		"  make apply          sync + switch" \
@@ -24,8 +28,9 @@ help:
 sync: sync-core sync-hidden sync-bin
 
 sync-core:
-	install -d "$(CONFIG_DIR)/home-manager" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
-	cp "$(REPO_ROOT)/home.nix" "$(CONFIG_DIR)/home-manager/"
+	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
+	cp "$(REPO_ROOT)/home.nix" "$(HOME_MANAGER_DIR)/"
+	cp "$(REPO_ROOT)/flake.nix" "$(HOME_MANAGER_DIR)/"
 	cp -r "$(REPO_ROOT)/niri" "$(CONFIG_DIR)/"
 	cp -r "$(REPO_ROOT)/waybar" "$(CONFIG_DIR)/"
 	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
@@ -46,6 +51,9 @@ switch:
 	home-manager --impure switch
 
 apply: sync switch
+
+prepare:
+	nix $(NIX_FLAKE_FLAGS) run $(HOME_MANAGER_REF) -- switch -b backup --flake "path:$(REPO_ROOT)#vals"
 
 reload-waybar:
 	"$(REPO_ROOT)/bin/reload-waybar"
