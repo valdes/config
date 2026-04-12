@@ -26,7 +26,6 @@
     eza # ls
     duf # du
     fd # find
-    ripgrep # grep
     mcfly # sh history navigator
     tldr # man
     hyperfine # command-line benchmarking tool
@@ -117,6 +116,22 @@
     pinta # quick image editing
     alacritty
     zellij
+
+    # desktop runtime dependencies
+    niri
+    waybar
+    swaybg
+    fuzzel
+    wl-clipboard
+    cliphist
+    swaylock
+    playerctl
+    brightnessctl
+    pamixer
+    blueberry
+    impala
+    wiremix
+    xwayland-satellite
   ];
 
   programs = {
