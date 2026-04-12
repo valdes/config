@@ -1,24 +1,46 @@
 * Config
-My apps(Linux) configurations
+Personal Linux workstation configuration.
 
-** Copy configuration files
-The next script copy the config file to its designed location
-#+name: copy_configs_files
+** Workflow
+
+Check prerequisites:
 #+begin_src sh :results output silent
-  cp .emacs ~/
-  cp .tmux.conf ~/
-  cp home.nix ~/.config/home-manager/
-  cp -r niri ~/.config/
-  cp -r waybar ~/.config/
-  cp -r bin/* ~/bin/
-  cp plantuml-1.2023.10.jar ~/
+  make doctor
 #+end_src
 
-** Launch new home-manager config
+Sync repo-managed files into place:
 #+begin_src sh :results output silent
-  home-manager --impure switch
+  make sync
 #+end_src
 
+Apply the Home Manager configuration:
+#+begin_src sh :results output silent
+  make switch
+#+end_src
 
-** Dependencies
-- Tmux manager
+Do both in one step:
+#+begin_src sh :results output silent
+  make apply
+#+end_src
+
+** Day-to-Day
+
+Show repo status:
+#+begin_src sh :results output silent
+  make status
+#+end_src
+
+Reload Waybar after config or style changes:
+#+begin_src sh :results output silent
+  make reload-waybar
+#+end_src
+
+Toggle Waybar visibility:
+#+begin_src sh :results output silent
+  make toggle-waybar
+#+end_src
+
+** Notes
+
+- =make sync= installs the wallpaper to =~/.local/share/backgrounds/background.jpg=.
+- =make switch= runs =home-manager --impure switch=.
