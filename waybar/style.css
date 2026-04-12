@@ -61,7 +61,6 @@ window#waybar {
 #network,
 #bluetooth,
 #pulseaudio,
-#custom-update,
 #niri-language {
   min-width: 12px;
   margin: 0 7.5px;

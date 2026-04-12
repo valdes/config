@@ -50,9 +50,10 @@
     }
   },
   "niri/language": {
-	"format": "Lang: {long}",
-	"format-en": "AMERICA, HELL YEAH!",
-	"format-es": "Spanish"
+    "format": "{short}",
+    "format-en": "EN",
+    "format-es": "ES",
+    "tooltip": false
   },
   "cpu": {
     "interval": 5,
