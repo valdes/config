@@ -114,7 +114,7 @@
     flameshot # screenshot tool
     xournalpp # handwriting tool with pdf annotation support
     pinta # quick image editing
-    alacritty
+    ghostty
     zellij
 
     # desktop runtime dependencies
@@ -187,7 +187,7 @@
   };
 
   # copy dot files
-  home.file.".config/alacritty/alacritty.toml".source = ./zenburn.toml;
+  home.file.".config/ghostty/config".source = ./ghostty/config;
   home.file.".tmux.conf".source                       = ./.tmux.conf;
 
   # This value determines the Home Manager release that your
