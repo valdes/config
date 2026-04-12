@@ -5,6 +5,7 @@ HOME_DIR := $(HOME)
 CONFIG_DIR := $(HOME_DIR)/.config
 BIN_DIR := $(HOME_DIR)/bin
 LOCAL_BIN_DIR := $(HOME_DIR)/.local/bin
+BACKGROUND_DIR := $(HOME_DIR)/.local/share/backgrounds
 
 .PHONY: help sync sync-core sync-hidden sync-bin switch apply reload-waybar toggle-waybar status doctor
 
@@ -22,11 +23,12 @@ help:
 sync: sync-core sync-hidden sync-bin
 
 sync-core:
-	install -d "$(CONFIG_DIR)/home-manager" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)"
+	install -d "$(CONFIG_DIR)/home-manager" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
 	cp "$(REPO_ROOT)/home.nix" "$(CONFIG_DIR)/home-manager/"
 	cp -r "$(REPO_ROOT)/niri" "$(CONFIG_DIR)/"
 	cp -r "$(REPO_ROOT)/waybar" "$(CONFIG_DIR)/"
 	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
+	cp "$(REPO_ROOT)/backgroud.jpg" "$(BACKGROUND_DIR)/backgroud.jpg"
 	cp "$(REPO_ROOT)/plantuml-1.2023.10.jar" "$(HOME_DIR)/"
 
 sync-hidden:

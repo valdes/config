@@ -372,7 +372,7 @@ layout {
 spawn-at-startup "waybar"
 
 // set wallpaper
-spawn-at-startup "swaybg -i .local/share/omakub/themes/everforest/background.jpg -m fill"
+spawn-at-startup "swaybg -i ~/.local/share/backgrounds/backgroud.jpg -m fill"
 
 // Persist clipboard history for text and images.
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
