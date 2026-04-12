@@ -7,7 +7,7 @@ BIN_DIR := $(HOME_DIR)/bin
 LOCAL_BIN_DIR := $(HOME_DIR)/.local/bin
 BACKGROUND_DIR := $(HOME_DIR)/.local/share/backgrounds
 
-.PHONY: help sync sync-core sync-hidden sync-bin switch apply reload-waybar toggle-waybar status doctor
+.PHONY: help sync sync-core sync-hidden sync-bin switch apply reload-waybar toggle-waybar status doctor check
 
 help:
 	@printf "%s\n" \
@@ -15,6 +15,7 @@ help:
 		"  make sync           Copy repo-managed files into place" \
 		"  make switch         Run home-manager --impure switch" \
 		"  make apply          sync + switch" \
+		"  make check          Validate repo-managed files and scripts" \
 		"  make reload-waybar  Send SIGUSR2 to waybar" \
 		"  make toggle-waybar  Send SIGUSR1 to waybar" \
 		"  make status         Show repo status" \
@@ -59,3 +60,16 @@ doctor:
 	@for cmd in home-manager cp install git; do \
 		command -v "$$cmd" >/dev/null || { echo "missing: $$cmd"; exit 1; }; \
 	done
+
+check:
+	test -f "$(REPO_ROOT)/home.nix"
+	test -f "$(REPO_ROOT)/niri/config.kdl"
+	test -f "$(REPO_ROOT)/waybar/config.jsonc"
+	test -f "$(REPO_ROOT)/waybar/style.css"
+	test -f "$(REPO_ROOT)/background.jpg"
+	test -f "$(REPO_ROOT)/bin/niri-ctl"
+	test -f "$(REPO_ROOT)/bin/reload-waybar"
+	test -f "$(REPO_ROOT)/bin/toggle-waybar"
+	bash -n "$(REPO_ROOT)/bin/niri-ctl"
+	bash -n "$(REPO_ROOT)/bin/reload-waybar"
+	bash -n "$(REPO_ROOT)/bin/toggle-waybar"
