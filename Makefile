@@ -28,7 +28,7 @@ sync-core:
 	cp -r "$(REPO_ROOT)/niri" "$(CONFIG_DIR)/"
 	cp -r "$(REPO_ROOT)/waybar" "$(CONFIG_DIR)/"
 	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
-	cp "$(REPO_ROOT)/backgroud.jpg" "$(BACKGROUND_DIR)/backgroud.jpg"
+	cp "$(REPO_ROOT)/background.jpg" "$(BACKGROUND_DIR)/background.jpg"
 	cp "$(REPO_ROOT)/plantuml-1.2023.10.jar" "$(HOME_DIR)/"
 
 sync-hidden:
