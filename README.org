@@ -40,6 +40,29 @@ Toggle Waybar visibility:
   make toggle-waybar
 #+end_src
 
+** niri-ctl
+
+The =bin/niri-ctl= helper supports environment overrides for machine-specific values:
+
+- =NIRI_CTL_MONITOR_MAIN=
+- =NIRI_CTL_MONITOR_PORTRAIT=
+- =NIRI_CTL_MONITOR_SECONDARY=
+- =NIRI_CTL_MONITOR_MAIN_MATCH=
+- =NIRI_CTL_MONITOR_PORTRAIT_MATCH=
+- =NIRI_CTL_PROJECTS_DIR=
+- =NIRI_CTL_TERMINAL=
+- =NIRI_CTL_EDITOR=
+- =NIRI_CTL_IDE=
+- =NIRI_CTL_BROWSER=
+
+Example:
+#+begin_src sh :results output silent
+  NIRI_CTL_PROJECTS_DIR="$HOME/src" \
+  NIRI_CTL_BROWSER=firefox \
+  NIRI_CTL_MONITOR_SECONDARY=DP-1 \
+  niri-ctl project
+#+end_src
+
 ** Notes
 
 - =make sync= installs the wallpaper to =~/.local/share/backgrounds/background.jpg=.
