@@ -1,6 +1,9 @@
 # Colors (Zenburn)
 # Orginally designed by jnurmine for vim.
 
+[window]
+decorations = "None"
+
 # Default colors
 [colors.primary]
 background = '#3A3A3A'
