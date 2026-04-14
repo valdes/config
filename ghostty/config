@@ -1,5 +1,6 @@
 # Zenburn-ish Ghostty config
 font-family = CaskaydiaMono Nerd Font
+window-decoration = none
 background = #3A3A3A
 foreground = #DCDCCC
 cursor-color = #DCDCCC

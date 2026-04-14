@@ -28,12 +28,13 @@ help:
 sync: sync-core sync-hidden sync-bin
 
 sync-core:
-	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
+	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)/ghostty" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
 	cp "$(REPO_ROOT)/home.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/flake.nix" "$(HOME_MANAGER_DIR)/"
 	cp -r "$(REPO_ROOT)/niri" "$(CONFIG_DIR)/"
 	cp -r "$(REPO_ROOT)/waybar" "$(CONFIG_DIR)/"
 	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
+	cp "$(REPO_ROOT)/ghostty/config" "$(CONFIG_DIR)/ghostty/config"
 	cp "$(REPO_ROOT)/background.jpg" "$(BACKGROUND_DIR)/background.jpg"
 	cp "$(REPO_ROOT)/plantuml-1.2023.10.jar" "$(HOME_DIR)/"
 
@@ -74,6 +75,7 @@ check:
 	test -f "$(REPO_ROOT)/niri/config.kdl"
 	test -f "$(REPO_ROOT)/waybar/config.jsonc"
 	test -f "$(REPO_ROOT)/waybar/style.css"
+	test -f "$(REPO_ROOT)/ghostty/config"
 	test -f "$(REPO_ROOT)/background.jpg"
 	test -f "$(REPO_ROOT)/bin/niri-ctl"
 	test -f "$(REPO_ROOT)/bin/reload-waybar"
