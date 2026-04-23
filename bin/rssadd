@@ -1,0 +1,61 @@
+#!/bin/sh
+
+notify() {
+	message="$1"
+
+	if command -v notify-send >/dev/null 2>&1; then
+		notify-send "$message" 2>/dev/null || printf '%s\n' "$message"
+	else
+		printf '%s\n' "$message"
+	fi
+}
+
+is_url() {
+	printf '%s\n' "$1" | grep -Eq '^https?://[^[:space:]]+$'
+}
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+MANAGED_RSSFILE="$REPO_ROOT/urls"
+LIVE_RSSFILE="$HOME/.newsboat/urls"
+
+if is_url "${1:-}"; then
+	url="$1"
+else
+	url="$(
+		grep -Eom1 '<[^>]+(rel="self"|application/[a-z]+\+xml)[^>]+>' "${1:-/dev/null}" 2>/dev/null |
+			grep -Eo 'https?://[^"[:space:]]+'
+	)"
+
+	if ! is_url "$url"; then
+		notify "That doesn't look like a full URL."
+		exit 1
+	fi
+fi
+
+tags="${2:-}"
+entry="$url"
+[ -n "$tags" ] && entry="$entry $tags"
+
+if [ -f "$MANAGED_RSSFILE" ]; then
+	RSSFILE="$MANAGED_RSSFILE"
+else
+	RSSFILE="$LIVE_RSSFILE"
+fi
+
+install -d "$(dirname -- "$RSSFILE")"
+
+if [ -f "$RSSFILE" ] && awk '{print $1}' "$RSSFILE" | grep -Fqx "$url"; then
+	notify "You already have this RSS feed."
+	exit 0
+fi
+
+printf '%s\n' "$entry" >> "$RSSFILE"
+sort -o "$RSSFILE" "$RSSFILE"
+
+if [ "$RSSFILE" != "$LIVE_RSSFILE" ]; then
+	install -d "$(dirname -- "$LIVE_RSSFILE")"
+	cp "$RSSFILE" "$LIVE_RSSFILE"
+fi
+
+notify "RSS feed added."
