@@ -6,6 +6,7 @@ CONFIG_DIR := $(HOME_DIR)/.config
 BIN_DIR := $(HOME_DIR)/bin
 LOCAL_BIN_DIR := $(HOME_DIR)/.local/bin
 BACKGROUND_DIR := $(HOME_DIR)/.local/share/backgrounds
+NEWSBOAT_DIR := $(HOME_DIR)/.newsboat
 HOME_MANAGER_DIR := $(CONFIG_DIR)/home-manager
 HOME_MANAGER_REF ?= home-manager/master
 NIX_FLAKE_FLAGS := --extra-experimental-features "nix-command flakes"
@@ -41,6 +42,8 @@ sync-core:
 sync-hidden:
 	cp "$(REPO_ROOT)/.emacs" "$(HOME_DIR)/"
 	cp "$(REPO_ROOT)/.tmux.conf" "$(HOME_DIR)/"
+	install -d "$(NEWSBOAT_DIR)"
+	cp "$(REPO_ROOT)/urls" "$(NEWSBOAT_DIR)/urls"
 
 sync-bin:
 	install -d "$(BIN_DIR)" "$(LOCAL_BIN_DIR)"
@@ -77,6 +80,7 @@ check:
 	test -f "$(REPO_ROOT)/waybar/style.css"
 	test -f "$(REPO_ROOT)/ghostty/config"
 	test -f "$(REPO_ROOT)/background.jpg"
+	test -f "$(REPO_ROOT)/urls"
 	test -f "$(REPO_ROOT)/bin/niri-ctl"
 	test -f "$(REPO_ROOT)/bin/reload-waybar"
 	test -f "$(REPO_ROOT)/bin/toggle-waybar"
