@@ -162,6 +162,13 @@
   :config
   (projectile-rails-global-mode))
 
+(global-set-key (kbd "C-c p f") #'projectile-find-file)
+(global-set-key (kbd "C-c p p") #'projectile-switch-project)
+(global-set-key (kbd "C-c p b") #'projectile-switch-to-buffer)
+(global-set-key (kbd "C-c p r") #'projectile-ripgrep)
+(global-set-key (kbd "C-c p k") #'projectile-kill-buffers)
+(global-set-key (kbd "C-c p t") #'projectile-test-project)
+
 ;disable temporary gitgutter (global-git-gutter-mode +1)
 (use-package magit
   :ensure t
