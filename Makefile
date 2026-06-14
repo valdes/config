@@ -54,7 +54,7 @@ sync-bin:
 	install -m 0755 "$(REPO_ROOT)/bin/toggle-waybar" "$(LOCAL_BIN_DIR)/toggle-waybar"
 
 switch:
-	home-manager --impure switch
+	nix $(NIX_FLAKE_FLAGS) run $(HOME_MANAGER_REF) -- switch --flake "path:$(REPO_ROOT)#vals"
 
 apply: sync switch
 
