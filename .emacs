@@ -478,6 +478,100 @@
   :ensure t
   :config (yas-global-mode))
 
+;; Java / Spring Boot development
+(defun aic-project-root ()
+  "Return the current project root or `default-directory'."
+  (or (when (and (fboundp 'projectile-project-root)
+                 (projectile-project-p))
+        (projectile-project-root))
+      (when-let ((project (project-current nil)))
+        (car (project-roots project)))
+      default-directory))
+
+(defun aic-file-in-project (file)
+  "Return FILE under the current project root when it exists."
+  (let ((path (expand-file-name file (aic-project-root))))
+    (when (file-exists-p path)
+      path)))
+
+(defun aic-java-build-tool-command (maven-command gradle-command)
+  "Return a project-local Java build command.
+MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
+  (let ((default-directory (aic-project-root)))
+    (cond
+     ((aic-file-in-project "mvnw") (concat "./mvnw " maven-command))
+     ((aic-file-in-project "gradlew") (concat "./gradlew " gradle-command))
+     ((or (aic-file-in-project "pom.xml")
+          (aic-file-in-project ".mvn")) (concat "mvn " maven-command))
+     ((or (aic-file-in-project "build.gradle")
+          (aic-file-in-project "build.gradle.kts")
+          (aic-file-in-project "settings.gradle")
+          (aic-file-in-project "settings.gradle.kts")) (concat "gradle " gradle-command))
+     (t (concat "mvn " maven-command)))))
+
+(defun aic-spring-boot-run ()
+  "Run the current Spring Boot application."
+  (interactive)
+  (let ((default-directory (aic-project-root)))
+    (compile (aic-java-build-tool-command "spring-boot:run" "bootRun"))))
+
+(defun aic-java-test ()
+  "Run tests for the current Java project."
+  (interactive)
+  (let ((default-directory (aic-project-root)))
+    (compile (aic-java-build-tool-command "test" "test"))))
+
+(defun aic-java-package ()
+  "Build the current Java project package."
+  (interactive)
+  (let ((default-directory (aic-project-root)))
+    (compile (aic-java-build-tool-command "package" "build"))))
+
+(defun aic-java-mode-setup ()
+  "Set sensible defaults for Java and Spring Boot development."
+  (setq-local c-basic-offset 4)
+  (setq-local indent-tabs-mode nil)
+  (setq-local tab-width 4)
+  (setq-local eglot-ignored-server-capabilities
+              (append eglot-ignored-server-capabilities
+                      '(:documentOnTypeFormattingProvider)))
+  (setq-local compile-command (aic-java-build-tool-command "test" "test"))
+  (local-set-key (kbd "C-c C-r") #'aic-spring-boot-run)
+  (local-set-key (kbd "C-c C-t") #'aic-java-test)
+  (local-set-key (kbd "C-c C-p") #'aic-java-package)
+  (when (fboundp 'eglot-ensure)
+    (eglot-ensure))
+  (when (executable-find "google-java-format")
+    (add-hook 'before-save-hook #'aic-google-java-format-buffer nil t)))
+
+(defun aic-google-java-format-buffer ()
+  "Format the current Java buffer with the `google-java-format' binary."
+  (interactive)
+  (when (executable-find "google-java-format")
+    (shell-command-on-region (point-min) (point-max)
+                             "google-java-format -"
+                             (current-buffer) t
+                             "*google-java-format errors*"
+                             t)))
+
+(use-package gradle-mode
+  :ensure t
+  :hook ((java-mode . gradle-mode)
+         (java-ts-mode . gradle-mode)))
+
+(use-package groovy-mode
+  :ensure t
+  :mode "\\.gradle\\'")
+
+(use-package yaml-mode
+  :ensure t
+  :mode (("\\.ya?ml\\'" . yaml-mode)
+         ("application.*\\.ya?ml\\'" . yaml-mode)))
+
+(use-package restclient
+  :ensure t
+  :mode "\\.http\\'")
+
 ;; C and C++ development
 (defun aic-c-mode-setup ()
   "Set sensible defaults for C and C++ development."
@@ -515,12 +609,16 @@
 
 (use-package eglot
   :ensure nil
-  :hook ((c-mode . aic-c-mode-setup)
+  :hook ((java-mode . aic-java-mode-setup)
+         (java-ts-mode . aic-java-mode-setup)
+         (c-mode . aic-c-mode-setup)
          (c-ts-mode . aic-c-mode-setup)
          (c++-mode . aic-c-mode-setup)
          (c++-ts-mode . aic-c-mode-setup)
          (zig-mode . aic-zig-mode-setup))
   :config
+  (add-to-list 'eglot-server-programs
+               '((java-mode java-ts-mode) . ("jdtls")))
   (add-to-list 'eglot-server-programs
                '((c-mode c-ts-mode c++-mode c++-ts-mode) . ("clangd")))
   (add-to-list 'eglot-server-programs

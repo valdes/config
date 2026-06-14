@@ -102,6 +102,15 @@
     lazygit
     lazydocker
     gum # iteractive shell menu creation
+
+    # java / spring boot
+    jdk25
+    maven
+    gradle
+    jdt-language-server
+    google-java-format
+    spring-boot-cli
+
     # documentation
     plantuml
     graphviz
@@ -184,6 +193,10 @@
     vscode = {
       enable = true;
     };
+  };
+
+  home.sessionVariables = {
+    JAVA_HOME = "${pkgs.jdk25}";
   };
 
   # copy dot files
