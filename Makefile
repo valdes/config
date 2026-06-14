@@ -50,6 +50,7 @@ sync-bin:
 	install -m 0755 "$(REPO_ROOT)/bin/niri-ctl" "$(BIN_DIR)/niri-ctl"
 	install -m 0755 "$(REPO_ROOT)/bin/reload-waybar" "$(LOCAL_BIN_DIR)/reload-waybar"
 	install -m 0755 "$(REPO_ROOT)/bin/rssadd" "$(LOCAL_BIN_DIR)/rssadd"
+	install -m 0755 "$(REPO_ROOT)/bin/rssget" "$(LOCAL_BIN_DIR)/rssget"
 	install -m 0755 "$(REPO_ROOT)/bin/toggle-waybar" "$(LOCAL_BIN_DIR)/toggle-waybar"
 
 switch:
@@ -85,8 +86,10 @@ check:
 	test -f "$(REPO_ROOT)/bin/niri-ctl"
 	test -f "$(REPO_ROOT)/bin/reload-waybar"
 	test -f "$(REPO_ROOT)/bin/rssadd"
+	test -f "$(REPO_ROOT)/bin/rssget"
 	test -f "$(REPO_ROOT)/bin/toggle-waybar"
 	bash -n "$(REPO_ROOT)/bin/niri-ctl"
 	bash -n "$(REPO_ROOT)/bin/reload-waybar"
 	sh -n "$(REPO_ROOT)/bin/rssadd"
+	bash -n "$(REPO_ROOT)/bin/rssget"
 	bash -n "$(REPO_ROOT)/bin/toggle-waybar"
