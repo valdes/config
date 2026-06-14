@@ -624,6 +624,11 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
   (add-to-list 'eglot-server-programs
                '(zig-mode . ("zls"))))
 
+(global-set-key (kbd "C-c j r") #'eglot-rename)
+(global-set-key (kbd "C-c j a") #'eglot-code-actions)
+(global-set-key (kbd "C-c j f") #'eglot-format)
+(global-set-key (kbd "C-c j e") #'flymake-show-buffer-diagnostics)
+
 (use-package clang-format
   :ensure t)
 
