@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly INTEL_PSTATE_DIR="/sys/devices/system/cpu/intel_pstate"
+readonly NO_TURBO_FILE="${INTEL_PSTATE_DIR}/no_turbo"
+readonly MAX_PERF_FILE="${INTEL_PSTATE_DIR}/max_perf_pct"
+readonly THROTTLED_MAX_PERF=60
+
+usage() {
+  cat <<'EOF'
+Usage: cpu-throttle [enable|disable|status]
+
+  enable   Use power-saver, disable Turbo Boost, and cap CPU performance at 60%
+  disable  Re-enable Turbo Boost, restore the 100% cap, and use balanced mode
+  status   Show the current CPU power settings
+
+With no action, "enable" is used.
+EOF
+}
+
+require_intel_pstate() {
+  if [[ ! -w "$NO_TURBO_FILE" || ! -w "$MAX_PERF_FILE" ]]; then
+    printf 'Error: writable intel_pstate controls were not found.\n' >&2
+    exit 1
+  fi
+}
+
+run_as_root() {
+  if (( EUID != 0 )); then
+    exec sudo -- "$0" "$@"
+  fi
+}
+
+set_profile() {
+  local profile=$1
+
+  if command -v powerprofilesctl >/dev/null 2>&1; then
+    powerprofilesctl set "$profile"
+  else
+    printf 'Warning: powerprofilesctl is unavailable; CPU limits will still be applied.\n' >&2
+  fi
+}
+
+show_status() {
+  local profile="unavailable"
+  local governor="unavailable"
+  local preference="unavailable"
+
+  if command -v powerprofilesctl >/dev/null 2>&1; then
+    profile=$(powerprofilesctl get 2>/dev/null || printf 'unavailable')
+  fi
+
+  if [[ -r /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]]; then
+    governor=$(< /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+  fi
+
+  if [[ -r /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference ]]; then
+    preference=$(< /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference)
+  fi
+
+  printf 'Power profile:       %s\n' "$profile"
+  printf 'CPU governor:        %s\n' "$governor"
+  printf 'Energy preference:   %s\n' "$preference"
+  printf 'Turbo disabled:      %s\n' "$(< "$NO_TURBO_FILE")"
+  printf 'Maximum performance: %s%%\n' "$(< "$MAX_PERF_FILE")"
+}
+
+action=${1:-enable}
+
+case "$action" in
+  enable)
+    run_as_root "$action"
+    require_intel_pstate
+    set_profile power-saver
+    printf '1\n' > "$NO_TURBO_FILE"
+    printf '%s\n' "$THROTTLED_MAX_PERF" > "$MAX_PERF_FILE"
+    printf 'CPU throttling enabled.\n'
+    show_status
+    ;;
+  disable)
+    run_as_root "$action"
+    require_intel_pstate
+    printf '0\n' > "$NO_TURBO_FILE"
+    printf '100\n' > "$MAX_PERF_FILE"
+    set_profile balanced
+    printf 'CPU throttling disabled.\n'
+    show_status
+    ;;
+  status)
+    if [[ ! -r "$NO_TURBO_FILE" || ! -r "$MAX_PERF_FILE" ]]; then
+      printf 'Error: readable intel_pstate controls were not found.\n' >&2
+      exit 1
+    fi
+    show_status
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    printf 'Unknown action: %s\n\n' "$action" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
