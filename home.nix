@@ -96,6 +96,7 @@
     yq-go # yaml processer https://github.com/mikefarah/yq
     gnumake
     emacs
+    nerd-fonts.symbols-only # icon glyphs used by doom-modeline/nerd-icons
     neovim
     vimPlugins.LazyVim
     mise # manage dev environment
@@ -142,6 +143,8 @@
     wiremix
     xwayland-satellite
   ];
+
+  fonts.fontconfig.enable = true;
 
   programs = {
     bat.enable = true;
