@@ -11,7 +11,7 @@ HOME_MANAGER_DIR := $(CONFIG_DIR)/home-manager
 HOME_MANAGER_REF ?= home-manager/master
 NIX_FLAKE_FLAGS := --extra-experimental-features "nix-command flakes"
 
-.PHONY: help sync sync-core sync-hidden sync-bin prepare switch apply reload-waybar toggle-waybar status doctor check
+.PHONY: help sync sync-core sync-hidden sync-bin prepare switch apply reload-waybar toggle-waybar install-system-deps-arch install-system-deps-ubuntu26 status doctor check
 
 help:
 	@printf "%s\n" \
@@ -21,6 +21,8 @@ help:
 		"  make switch         Run home-manager --impure switch" \
 		"  make apply          sync + switch" \
 		"  make check          Validate repo-managed files and scripts" \
+		"  make install-system-deps-arch     Install Arch host dependencies" \
+		"  make install-system-deps-ubuntu26 Install Ubuntu 26.04 host dependencies" \
 		"  make reload-waybar  Send SIGUSR2 to waybar" \
 		"  make toggle-waybar  Send SIGUSR1 to waybar" \
 		"  make status         Show repo status" \
@@ -48,6 +50,8 @@ sync-hidden:
 sync-bin:
 	install -d "$(BIN_DIR)" "$(LOCAL_BIN_DIR)"
 	install -m 0755 "$(REPO_ROOT)/bin/niri-ctl" "$(BIN_DIR)/niri-ctl"
+	install -m 0755 "$(REPO_ROOT)/bin/install-system-deps-arch" "$(BIN_DIR)/install-system-deps-arch"
+	install -m 0755 "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(BIN_DIR)/install-system-deps-ubuntu26"
 	install -m 0755 "$(REPO_ROOT)/bin/reload-waybar" "$(LOCAL_BIN_DIR)/reload-waybar"
 	install -m 0755 "$(REPO_ROOT)/bin/rssadd" "$(LOCAL_BIN_DIR)/rssadd"
 	install -m 0755 "$(REPO_ROOT)/bin/rssget" "$(LOCAL_BIN_DIR)/rssget"
@@ -67,6 +71,12 @@ reload-waybar:
 toggle-waybar:
 	"$(REPO_ROOT)/bin/toggle-waybar"
 
+install-system-deps-arch:
+	"$(REPO_ROOT)/bin/install-system-deps-arch"
+
+install-system-deps-ubuntu26:
+	"$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
+
 status:
 	git status --short
 
@@ -84,11 +94,15 @@ check:
 	test -f "$(REPO_ROOT)/background.jpg"
 	test -f "$(REPO_ROOT)/urls"
 	test -f "$(REPO_ROOT)/bin/niri-ctl"
+	test -f "$(REPO_ROOT)/bin/install-system-deps-arch"
+	test -f "$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
 	test -f "$(REPO_ROOT)/bin/reload-waybar"
 	test -f "$(REPO_ROOT)/bin/rssadd"
 	test -f "$(REPO_ROOT)/bin/rssget"
 	test -f "$(REPO_ROOT)/bin/toggle-waybar"
 	bash -n "$(REPO_ROOT)/bin/niri-ctl"
+	bash -n "$(REPO_ROOT)/bin/install-system-deps-arch"
+	bash -n "$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
 	bash -n "$(REPO_ROOT)/bin/reload-waybar"
 	sh -n "$(REPO_ROOT)/bin/rssadd"
 	bash -n "$(REPO_ROOT)/bin/rssget"

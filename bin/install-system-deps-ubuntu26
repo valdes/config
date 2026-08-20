@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if ! command -v apt-get >/dev/null 2>&1 || [[ ! -r /etc/os-release ]]; then
+  printf 'Error: apt-get and /etc/os-release are required for Ubuntu 26.04.\n' >&2
+  exit 1
+fi
+
+# Ubuntu 26.04 is codenamed resolute. Permit derivatives and newer point
+# releases, but warn when this is run on another Ubuntu release.
+# shellcheck disable=SC1091
+source /etc/os-release
+if [[ "${ID:-}" != ubuntu ]]; then
+  printf 'Error: this script is for Ubuntu; detected %s.\n' "${ID:-unknown}" >&2
+  exit 1
+fi
+if [[ "${VERSION_ID:-}" != 26.04 ]]; then
+  printf 'Warning: detected Ubuntu %s; this script targets Ubuntu 26.04.\n' "${VERSION_ID:-unknown}" >&2
+fi
+
+readonly NOCTALIA_KEYRING_URL="https://pkg.noctalia.dev/deb/nickh-archive-keyring.deb"
+readonly NOCTALIA_SOURCES_URL="https://pkg.noctalia.dev/deb/noctalia-resolute.sources"
+readonly NIRI_PPA="ppa:avengemedia/danklinux"
+
+readonly PACKAGES=(
+  # Host services used by the Nix/Home Manager desktop configuration
+  niri
+  noctalia
+  network-manager
+  bluez
+  upower
+  power-profiles-daemon
+  pipewire
+  pipewire-pulse
+  wireplumber
+  libspa-0.2-bluetooth
+  rtkit
+  psmisc
+  dbus-user-session
+  gnome-keyring
+  libpam-gnome-keyring
+  libsecret-1-0
+  at-spi2-core
+  orca
+  polkitd
+  libnotify-bin
+  xdg-desktop-portal
+  xdg-desktop-portal-gtk
+  xdg-utils
+  desktop-file-utils
+  shared-mime-info
+  # Wayland/EGL userspace and external-monitor support
+  libegl1
+  libgles2
+  libgbm1
+  libgl1-mesa-dri
+  mesa-vulkan-drivers
+  ddcutil
+  ca-certificates
+  software-properties-common
+  wget
+)
+
+if (( EUID == 0 )); then
+  readonly SUDO=()
+else
+  command -v sudo >/dev/null 2>&1 || {
+    printf 'Error: sudo is required when not run as root.\n' >&2
+    exit 1
+  }
+  readonly SUDO=(sudo)
+fi
+
+printf 'Adding the Niri and Noctalia package sources...\n'
+"${SUDO[@]}" apt-get update
+"${SUDO[@]}" apt-get install --no-install-recommends -y ca-certificates software-properties-common wget
+"${SUDO[@]}" add-apt-repository --yes "${NIRI_PPA}"
+tmp_dir=$(mktemp -d)
+trap 'rm -rf "$tmp_dir"' EXIT
+wget --quiet --show-progress --output-document "${tmp_dir}/noctalia-keyring.deb" "${NOCTALIA_KEYRING_URL}"
+"${SUDO[@]}" dpkg --install "${tmp_dir}/noctalia-keyring.deb"
+"${SUDO[@]}" wget --quiet --output-document /etc/apt/sources.list.d/noctalia-resolute.sources "${NOCTALIA_SOURCES_URL}"
+
+printf 'Refreshing Ubuntu package indexes...\n'
+"${SUDO[@]}" apt-get update
+printf 'Installing Niri, Noctalia, and host dependencies on Ubuntu...\n'
+"${SUDO[@]}" apt-get install --no-install-recommends -y "${PACKAGES[@]}"
+
+printf 'Enabling system services...\n'
+"${SUDO[@]}" systemctl enable --now NetworkManager.service
+"${SUDO[@]}" systemctl enable --now bluetooth.service
+"${SUDO[@]}" systemctl enable --now power-profiles-daemon.service
+
+if (( EUID != 0 )) && [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+  printf 'Enabling user audio services...\n'
+  systemctl --user enable --now pipewire.socket pipewire-pulse.socket
+  systemctl --user enable --now pipewire.service pipewire-pulse.service wireplumber.service
+else
+  printf '%s\n' \
+    'User audio services were not started (no active user D-Bus session).' \
+    'Run these commands inside your graphical session:' \
+    '  systemctl --user enable --now pipewire.service pipewire-pulse.service wireplumber.service'
+fi
+
+cat <<'EOF'
+
+Installed. GNOME Keyring is normally started by the display manager/PAM and
+XDG desktop portals are D-Bus activated. Log out and back in if either is not
+available to the session.
+EOF
