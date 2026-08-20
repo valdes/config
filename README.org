@@ -28,6 +28,35 @@ Do both in one step:
   make apply
 #+end_src
 
+** Noctalia
+
+Noctalia v5 owns the shell surfaces around niri: bar, launcher, wallpaper,
+notifications, clipboard history, lock screen, OSDs, and the control center.
+Its declarative base configuration is in =home.nix=; GUI changes are stored
+by Noctalia in =~/.local/state/noctalia/settings.toml= and override that base.
+
+The host services remain Arch/systemd managed. The expected services are
+NetworkManager, Bluetooth, UPower, power-profiles-daemon, PipeWire/WirePlumber,
+GNOME Keyring Secret Service, polkit, and an XDG desktop portal. Check them
+with:
+
+#+begin_src sh :results output silent
+  systemctl is-enabled NetworkManager bluetooth power-profiles-daemon
+  systemctl --user status pipewire-pulse wireplumber
+#+end_src
+
+Noctalia is started by niri after =make apply=; restart the niri session to
+complete the cutover. To return temporarily to the previous shell, restore the
+Waybar/swaybg startup lines and the original niri bindings, then rebuild.
+
+Useful diagnostics:
+
+#+begin_src sh :results output silent
+  noctalia config validate
+  noctalia msg --help
+  journalctl --user -b | rg noctalia
+#+end_src
+
 ** Day-to-Day
 
 Show repo status:

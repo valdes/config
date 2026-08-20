@@ -147,6 +147,200 @@
   fonts.fontconfig.enable = true;
 
   programs = {
+    noctalia = {
+      enable = true;
+      systemd.enable = false;
+
+      settings = {
+        shell = {
+          font_family = "CaskaydiaMono Nerd Font";
+          telemetry_enabled = false;
+          polkit_agent = true;
+          clipboard_enabled = true;
+          clipboard_history_max_entries = 100;
+          launch_apps_as_systemd_services = false;
+        };
+
+        storage.key_source = "secret-service";
+
+        theme = {
+          mode = "dark";
+          source = "custom";
+          custom_palette = "Zenburn";
+        };
+
+        wallpaper = {
+          enabled = true;
+          fill_mode = "crop";
+          default.path = "${config.home.homeDirectory}/.local/share/backgrounds/background.jpg";
+        };
+
+        notification = {
+          enable_daemon = true;
+          show_app_name = true;
+          show_actions = true;
+          background_opacity = 0.97;
+        };
+
+        lockscreen.enabled = true;
+        brightness.enable_ddcutil = false;
+
+        idle.behavior.lock = {
+          enabled = false;
+          timeout = 600;
+          action = "lock";
+        };
+        idle.behavior.screen-off = {
+          enabled = false;
+          timeout = 660;
+          action = "screen_off";
+        };
+
+        bar.main = {
+          position = "top";
+          thickness = 26;
+          background_opacity = 0.92;
+          radius = 0;
+          margin_ends = 0;
+          margin_edge = 0;
+          padding = 8;
+          widget_spacing = 6;
+          shadow = false;
+          capsule = false;
+          reserve_space = true;
+          start = [ "workspaces" ];
+          center = [ "clock" ];
+          end = [
+            "tray"
+            "keyboard_layout"
+            "network"
+            "bluetooth"
+            "volume"
+            "battery"
+            "control-center"
+          ];
+        };
+
+        widget.workspaces = {
+          style = "minimal";
+          show_labels = true;
+          label_source = "name";
+          max_label_chars = 10;
+          labels_only_when_occupied = false;
+          hide_when_empty = false;
+        };
+        widget.clock = {
+          format = "{:%A %H:%M}";
+          tooltip_format = "{:%d %B W%V %Y}";
+        };
+        widget.network.show_label = false;
+        widget.bluetooth.show_label = false;
+        widget.volume.show_label = false;
+        widget.battery.show_label = false;
+
+        dock.enabled = false;
+        desktop_widgets.enabled = false;
+        backdrop.enabled = false;
+      };
+
+      customPalettes = {
+        Zenburn = {
+          dark = {
+            mPrimary = "#7F9F7F";
+            mOnPrimary = "#1E2320";
+            mSecondary = "#8CD0D3";
+            mOnSecondary = "#1E2320";
+            mTertiary = "#DFAF8F";
+            mOnTertiary = "#1E2320";
+            mError = "#CC9393";
+            mOnError = "#1E2320";
+            mSurface = "#2B2B2B";
+            mOnSurface = "#DCDCCC";
+            mSurfaceVariant = "#3F3F3F";
+            mOnSurfaceVariant = "#C3BF9F";
+            mOutline = "#5F5F5F";
+            mShadow = "#1E2320";
+            mHover = "#4F4F4F";
+            mOnHover = "#DCDCCC";
+            terminal = {
+              background = "#3A3A3A";
+              foreground = "#DCDCCC";
+              cursor = "#DCDCCC";
+              cursorText = "#3A3A3A";
+              selectionBg = "#DCDCCC";
+              selectionFg = "#3A3A3A";
+              normal = {
+                black = "#1E2320";
+                red = "#D78787";
+                green = "#60B48A";
+                yellow = "#DFAF8F";
+                blue = "#506070";
+                magenta = "#DC8CC3";
+                cyan = "#8CD0D3";
+                white = "#DCDCCC";
+              };
+              bright = {
+                black = "#709080";
+                red = "#DCA3A3";
+                green = "#C3BF9F";
+                yellow = "#F0DFAF";
+                blue = "#94BFF3";
+                magenta = "#EC93D3";
+                cyan = "#93E0E3";
+                white = "#FFFFFF";
+              };
+            };
+          };
+          light = {
+            mPrimary = "#5F7F5F";
+            mOnPrimary = "#FFFFFF";
+            mSecondary = "#4F8F8F";
+            mOnSecondary = "#FFFFFF";
+            mTertiary = "#9F6F4F";
+            mOnTertiary = "#FFFFFF";
+            mError = "#A85F5F";
+            mOnError = "#FFFFFF";
+            mSurface = "#DCDCCC";
+            mOnSurface = "#1E2320";
+            mSurfaceVariant = "#C3BF9F";
+            mOnSurfaceVariant = "#2B2B2B";
+            mOutline = "#709080";
+            mShadow = "#3A3A3A";
+            mHover = "#B8B8A0";
+            mOnHover = "#1E2320";
+            terminal = {
+              background = "#DCDCCC";
+              foreground = "#1E2320";
+              cursor = "#1E2320";
+              cursorText = "#DCDCCC";
+              selectionBg = "#1E2320";
+              selectionFg = "#DCDCCC";
+              normal = {
+                black = "#DCDCCC";
+                red = "#A85F5F";
+                green = "#5F7F5F";
+                yellow = "#9F6F4F";
+                blue = "#506070";
+                magenta = "#9F5F8F";
+                cyan = "#4F8F8F";
+                white = "#1E2320";
+              };
+              bright = {
+                black = "#709080";
+                red = "#A85F5F";
+                green = "#5F7F5F";
+                yellow = "#9F6F4F";
+                blue = "#506070";
+                magenta = "#9F5F8F";
+                cyan = "#4F8F8F";
+                white = "#000000";
+              };
+            };
+          };
+        };
+      };
+    };
+
     bat.enable = true;
     zsh = {
     	enable = true;

@@ -7,9 +7,10 @@
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    noctalia.url = "github:noctalia-dev/noctalia/cachix";
   };
 
-  outputs = { nixpkgs, home-manager, ... }:
+  outputs = { nixpkgs, home-manager, noctalia, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -20,7 +21,7 @@
     {
       homeConfigurations.vals = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        modules = [ ./home.nix ];
+        modules = [ noctalia.homeModules.default ./home.nix ];
       };
     };
 }
