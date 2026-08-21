@@ -104,6 +104,12 @@
     lazydocker
     gum # iteractive shell menu creation
 
+    # language servers
+    clang-tools
+    zls
+    yaml-language-server
+    nixd
+
     # java / spring boot
     jdk25
     maven

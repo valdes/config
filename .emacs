@@ -534,20 +534,32 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
   (let ((default-directory (aic-project-root)))
     (compile (aic-java-build-tool-command "package" "build"))))
 
+(defun aic-eglot-mode-setup (&optional format-on-save)
+  "Start Eglot and optionally enable FORMAT-ON-SAVE in the current buffer."
+  (require 'eglot)
+  (eglot-ensure)
+  (remove-hook 'before-save-hook #'eglot-format-buffer t)
+  (when format-on-save
+    (add-hook 'before-save-hook #'eglot-format-buffer nil t)))
+
+(defun aic-eglot-format-mode-setup ()
+  "Start Eglot and enable Eglot formatting on save."
+  (aic-eglot-mode-setup t))
+
 (defun aic-java-mode-setup ()
   "Set sensible defaults for Java and Spring Boot development."
   (setq-local c-basic-offset 4)
   (setq-local indent-tabs-mode nil)
   (setq-local tab-width 4)
   (setq-local eglot-ignored-server-capabilities
-              (append eglot-ignored-server-capabilities
+              (append (and (boundp 'eglot-ignored-server-capabilities)
+                           eglot-ignored-server-capabilities)
                       '(:documentOnTypeFormattingProvider)))
   (setq-local compile-command (aic-java-build-tool-command "test" "test"))
   (local-set-key (kbd "C-c C-r") #'aic-spring-boot-run)
   (local-set-key (kbd "C-c C-t") #'aic-java-test)
   (local-set-key (kbd "C-c C-p") #'aic-java-package)
-  (when (fboundp 'eglot-ensure)
-    (eglot-ensure))
+  (aic-eglot-mode-setup)
   (when (executable-find "google-java-format")
     (add-hook 'before-save-hook #'aic-google-java-format-buffer nil t)))
 
@@ -587,10 +599,7 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
   (setq-local tab-width 4)
   (unless (local-variable-p 'compile-command)
     (setq-local compile-command "make -k "))
-  (when (fboundp 'eglot-ensure)
-    (eglot-ensure))
-  (when (fboundp 'clang-format-buffer)
-    (add-hook 'before-save-hook #'clang-format-buffer nil t)))
+  (aic-eglot-mode-setup t))
 
 ;; Zig development
 (defun aic-zig-mode-setup ()
@@ -606,10 +615,7 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
                               (shell-quote-argument
                                (file-name-nondirectory buffer-file-name)))
                     "zig build"))))
-  (when (fboundp 'eglot-ensure)
-    (eglot-ensure))
-  (when (fboundp 'eglot-format-buffer)
-    (add-hook 'before-save-hook #'eglot-format-buffer nil t)))
+  (aic-eglot-mode-setup t))
 
 (use-package zig-mode
   :ensure t)
@@ -622,14 +628,20 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
          (c-ts-mode . aic-c-mode-setup)
          (c++-mode . aic-c-mode-setup)
          (c++-ts-mode . aic-c-mode-setup)
-         (zig-mode . aic-zig-mode-setup))
+         (zig-mode . aic-zig-mode-setup)
+         (yaml-mode . aic-eglot-format-mode-setup)
+         (nix-mode . aic-eglot-format-mode-setup))
   :config
   (add-to-list 'eglot-server-programs
                '((java-mode java-ts-mode) . ("jdtls")))
   (add-to-list 'eglot-server-programs
                '((c-mode c-ts-mode c++-mode c++-ts-mode) . ("clangd")))
   (add-to-list 'eglot-server-programs
-               '(zig-mode . ("zls"))))
+               '(zig-mode . ("zls")))
+  (add-to-list 'eglot-server-programs
+               '(yaml-mode . ("yaml-language-server" "--stdio")))
+  (add-to-list 'eglot-server-programs
+               '(nix-mode . ("nixd"))))
 
 (global-set-key (kbd "C-c j r") #'eglot-rename)
 (global-set-key (kbd "C-c j a") #'eglot-code-actions)
