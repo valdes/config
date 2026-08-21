@@ -109,6 +109,7 @@
     zls
     yaml-language-server
     nixd
+    rust-analyzer
 
     # java / spring boot
     jdk25

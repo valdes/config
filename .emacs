@@ -620,6 +620,10 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
 (use-package zig-mode
   :ensure t)
 
+(use-package rust-mode
+  :ensure t
+  :mode "\\.rs\\'")
+
 (use-package eglot
   :ensure nil
   :hook ((java-mode . aic-java-mode-setup)
@@ -630,7 +634,9 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
          (c++-ts-mode . aic-c-mode-setup)
          (zig-mode . aic-zig-mode-setup)
          (yaml-mode . aic-eglot-format-mode-setup)
-         (nix-mode . aic-eglot-format-mode-setup))
+         (nix-mode . aic-eglot-format-mode-setup)
+         (rust-mode . aic-eglot-format-mode-setup)
+         (rust-ts-mode . aic-eglot-format-mode-setup))
   :config
   (add-to-list 'eglot-server-programs
                '((java-mode java-ts-mode) . ("jdtls")))
@@ -641,7 +647,9 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
   (add-to-list 'eglot-server-programs
                '(yaml-mode . ("yaml-language-server" "--stdio")))
   (add-to-list 'eglot-server-programs
-               '(nix-mode . ("nixd"))))
+               '(nix-mode . ("nixd")))
+  (add-to-list 'eglot-server-programs
+               '((rust-mode rust-ts-mode) . ("rust-analyzer"))))
 
 (global-set-key (kbd "C-c j r") #'eglot-rename)
 (global-set-key (kbd "C-c j a") #'eglot-code-actions)
