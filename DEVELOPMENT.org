@@ -6,8 +6,9 @@ documentation and application testing.
 
 ** Start a project
 
-From niri, press =Mod+P= and select a project. The launcher starts three apps;
-Niri window rules place them on the existing workflow workspaces:
+From niri, press =Mod+P= and select a top-level project from =~/work=. The
+launcher starts three apps; Niri window rules place them on the existing
+workflow workspaces:
 
 - =build=: GUI Emacs opened through =emacsclient=.
 - =ops=: Ghostty attached to the project's tmux session.
@@ -23,6 +24,10 @@ Start the terminal workflow directly when the full desktop preset is not needed:
   dev-session ~/work/project
   dev-session --launch ~/work/project
 #+end_src
+
+Use the direct command for projects outside =~/work= or nested below another
+project directory. The launcher and the Emacs =C-c x a= command both delegate
+terminal startup to =dev-session=.
 
 Sessions are named =dev-<project>= and contain two tmux windows:
 

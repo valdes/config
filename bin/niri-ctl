@@ -142,13 +142,14 @@ events)
   ;;
 
 project)
-  PROJECT=$(find "$PROJECTS_DIR" -mindepth 1 -maxdepth 2 -type d | fuzzel --dmenu --width=80 --prompt="Select project: ")
+  PROJECT=$(find "$PROJECTS_DIR" -mindepth 1 -maxdepth 2 -type d -print \
+    | sort \
+    | fuzzel --dmenu --width=80 --prompt="Select project: ")
   if [ -n "$PROJECT" ]; then
     PROJECT_NAME=$(basename "$PROJECT")
 
     "$EMACSCLIENT" -c -a emacs "$PROJECT" &
-    "$TERMINAL" --class=dev.vals.DevSession --working-directory "$PROJECT" \
-      -e "$DEV_SESSION" "$PROJECT" &
+    "$DEV_SESSION" --launch "$PROJECT" &
     launch_project_browser
 
     # Placement is declarative; only choose the workspace left focused.

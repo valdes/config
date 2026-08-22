@@ -99,7 +99,7 @@ if $launch_terminal; then
     echo "Missing required command: $terminal_command" >&2
     exit 1
   fi
-  "$terminal_command" --working-directory "$project" \
+  "$terminal_command" --class=dev.vals.DevSession --working-directory "$project" \
     -e tmux attach-session -t "=$session_name" \
     >/dev/null 2>&1 &
 elif [[ -n "${TMUX:-}" ]]; then
