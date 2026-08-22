@@ -1,0 +1,102 @@
+* Development Workflow
+
+Emacs is the editing, navigation, diagnostics, and review surface. Codex runs in
+Ghostty inside a project-scoped tmux session. The browser stays separate for
+documentation and application testing.
+
+** Start a project
+
+From niri, press =Mod+P= and select a project. The project launcher creates or
+focuses three project workspaces:
+
+- =<project>-main=: GUI Emacs opened through =emacsclient=.
+- =<project>-term=: Ghostty attached to the project's tmux session.
+- =<project>-browser=: the configured browser.
+
+Start the terminal workflow directly when the full desktop preset is not needed:
+
+#+begin_src sh
+  dev-session ~/work/project
+  dev-session --launch ~/work/project
+#+end_src
+
+Sessions are named =dev-<project>= and contain two tmux windows:
+
+- =agent=: Codex, rooted at the project directory.
+- =shell=: an independent shell for builds, tests, logs, and Git commands.
+
+With the =C-x= tmux prefix, use =C-x a= for the agent and =C-x s= for the shell.
+
+** Work in Emacs
+
+Project commands use the =C-c p= prefix:
+
+- =C-c p p=: switch project.
+- =C-c p f=: find a project file.
+- =C-c p b=: switch project buffer.
+- =C-c p r=: search the project with ripgrep.
+- =C-c p t=: run the conventional project test command.
+- =C-c p k=: kill project buffers.
+
+Code intelligence uses Eglot and Flymake:
+
+- =C-c j r=: rename a symbol.
+- =C-c j a=: apply a code action.
+- =C-c j f=: format through Eglot.
+- =C-c j e=: inspect diagnostics with Consult.
+
+Use =F10= for buffers, =Shift+F10= for recent files, =C-.= for contextual
+Embark actions, and =C-x g= for Magit.
+
+** Work with Codex
+
+Use =C-c x= to move explicit context from Emacs to the terminal agent:
+
+- =C-c x a=: open the current project's Codex session in Ghostty.
+- =C-c x f=: copy the current project-relative =file:line=.
+- =C-c x r=: copy the active region with its file and line range.
+
+Paste into tmux with =C-x C-v=. Context is copied but never submitted
+automatically, so the final prompt remains visible and editable.
+
+A normal change loop is:
+
+1. Check =git status= and create a checkpoint when the change is substantial.
+2. Give Codex one concrete outcome, constraints, and acceptance checks.
+3. Add precise file or region context from Emacs when it reduces ambiguity.
+4. Inspect edits in Emacs or Magit instead of accepting the summary alone.
+5. Run focused tests, then the broader project checks from the =shell= window.
+6. Ask Codex to follow up on failures or use =/review= for a separate review pass.
+7. Review the final diff and commit manually.
+
+Choose model and permissions inside Codex with =/model= and =/permissions=.
+Do not hard-code broad permissions into the project launcher.
+
+** Project test detection
+
+=C-c p t= selects the first matching command:
+
+| Marker                 | Command          |
+|------------------------+------------------|
+| =mvnw=                 | =./mvnw test=    |
+| =gradlew=              | =./gradlew test= |
+| =pom.xml=              | =mvn test=       |
+| =build.gradle[.kts]=   | =gradle test=    |
+| =Cargo.toml=           | =cargo test=      |
+| =build.zig=            | =zig build test= |
+| =Makefile=             | =make test=       |
+
+When no marker matches, Emacs uses the buffer's existing =compile-command=.
+
+** Maintain this configuration
+
+After editing the repo:
+
+#+begin_src sh
+  make check
+  make sync
+#+end_src
+
+=make check= validates managed files and shell syntax. =make sync= installs the
+repo-managed Emacs, tmux, niri, and helper configuration into the home directory.
+

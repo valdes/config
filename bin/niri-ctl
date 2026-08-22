@@ -14,7 +14,8 @@ ARG="$2"
 #   NIRI_CTL_PROJECTS_DIR
 #   NIRI_CTL_TERMINAL
 #   NIRI_CTL_EDITOR
-#   NIRI_CTL_IDE
+#   NIRI_CTL_EMACSCLIENT
+#   NIRI_CTL_DEV_SESSION
 #   NIRI_CTL_BROWSER
 
 MONITOR_MAIN_MATCH="${NIRI_CTL_MONITOR_MAIN_MATCH:-27}"
@@ -29,7 +30,8 @@ PROJECTS_DIR="${NIRI_CTL_PROJECTS_DIR:-$HOME/work}"
 
 TERMINAL="${NIRI_CTL_TERMINAL:-ghostty}"
 EDITOR="${NIRI_CTL_EDITOR:-code}"
-IDE="${NIRI_CTL_IDE:-idea}"
+EMACSCLIENT="${NIRI_CTL_EMACSCLIENT:-emacsclient}"
+DEV_SESSION="${NIRI_CTL_DEV_SESSION:-dev-session}"
 BROWSER="${NIRI_CTL_BROWSER:-microsoft-edge}"
 
 
@@ -222,8 +224,10 @@ project)
     WS_BROWSER="${PROJECT_NAME}-browser"
 
     # Use the new function to set up each app and its workspace.
-    setup_app_on_workspace "$WS_MAIN" "$MONITOR_MAIN" "$IDE" "$PROJECT"
-    setup_app_on_workspace "$WS_TERM" "$MONITOR_PORTRAIT" "$TERMINAL" --working-directory "$PROJECT"
+    setup_app_on_workspace "$WS_MAIN" "$MONITOR_MAIN" \
+      "$EMACSCLIENT" -c -a emacs "$PROJECT"
+    setup_app_on_workspace "$WS_TERM" "$MONITOR_PORTRAIT" \
+      "$TERMINAL" --working-directory "$PROJECT" -e "$DEV_SESSION" "$PROJECT"
     setup_app_on_workspace "$WS_BROWSER" "$MONITOR_SECONDARY" "$BROWSER"
 
     # Focus the main project workspace to leave things in a predictable state.

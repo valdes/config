@@ -1,6 +1,8 @@
 * Config
 Personal Linux workstation configuration.
 
+The day-to-day coding loop is documented in [[file:DEVELOPMENT.org][DEVELOPMENT.org]].
+
 ** Workflow
 
 Bootstrap Home Manager with the repo flake:
@@ -83,6 +85,28 @@ Toggle Waybar visibility:
   make toggle-waybar
 #+end_src
 
+** Emacs and Codex
+
+Emacs owns editing, navigation, diagnostics, compilation, and review. Codex runs
+in the project's tmux session:
+
+#+begin_src sh :results output silent
+  dev-session ~/work/project
+  dev-session --launch ~/work/project
+#+end_src
+
+The session contains =agent= and =shell= windows. With the configured =C-x=
+tmux prefix, use =C-x a= for the agent and =C-x s= for the shell.
+
+Emacs uses =C-c x= for explicit Codex handoff:
+
+- =C-c x a= opens the project session in Ghostty.
+- =C-c x f= copies the current project-relative =file:line=.
+- =C-c x r= copies the selected region with file and line context.
+
+Project navigation remains under =C-c p=. Prompts are copied to the clipboard
+and are never submitted automatically.
+
 ** niri-ctl
 
 The =bin/niri-ctl= helper supports environment overrides for machine-specific values:
@@ -95,7 +119,8 @@ The =bin/niri-ctl= helper supports environment overrides for machine-specific va
 - =NIRI_CTL_PROJECTS_DIR=
 - =NIRI_CTL_TERMINAL=
 - =NIRI_CTL_EDITOR=
-- =NIRI_CTL_IDE=
+- =NIRI_CTL_EMACSCLIENT=
+- =NIRI_CTL_DEV_SESSION=
 - =NIRI_CTL_BROWSER=
 
 Example:

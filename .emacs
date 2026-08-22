@@ -135,44 +135,93 @@
 ;; Global tools
 ;; Start the server for emacsclient.
 (server-mode 1)
+(recentf-mode 1)
+(repeat-mode 1)
+(winner-mode 1)
+(electric-pair-mode 1)
+(global-auto-revert-mode 1)
 
 ;; Completion and project navigation
-(use-package helm
-  :ensure t
-  :bind (("C-x C-f" . helm-find-files)
-	 ([f10] . helm-buffers-list)
-         ([S-f10] . helm-recentf))
-  :config
-  (helm-mode 1))
+(define-prefix-command 'aic-project-map)
+(global-set-key (kbd "C-c p") 'aic-project-map)
 
-(use-package projectile
-  :ensure t
-  :config
-  (projectile-mode 1))
+(use-package savehist
+  :ensure nil
+  :init (savehist-mode 1))
 
-(use-package helm-projectile
+(use-package vertico
   :ensure t
-  :after (helm projectile)
-  :config
-  (helm-projectile-on))
+  :init (vertico-mode 1))
 
-(use-package projectile-rails
+(use-package orderless
   :ensure t
-  :after projectile
-  :config
-  (projectile-rails-global-mode))
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles partial-completion)))))
 
-(global-set-key (kbd "C-c p f") #'projectile-find-file)
-(global-set-key (kbd "C-c p p") #'projectile-switch-project)
-(global-set-key (kbd "C-c p b") #'projectile-switch-to-buffer)
-(global-set-key (kbd "C-c p r") #'projectile-ripgrep)
-(global-set-key (kbd "C-c p k") #'projectile-kill-buffers)
-(global-set-key (kbd "C-c p t") #'projectile-test-project)
+(use-package marginalia
+  :ensure t
+  :init (marginalia-mode 1))
+
+(use-package consult
+  :ensure t
+  :bind (([f10] . consult-buffer)
+         ([S-f10] . consult-recent-file)
+         ("C-c p b" . consult-project-buffer)
+         ("C-c p r" . consult-ripgrep)
+         ("C-c j e" . consult-flymake)))
+
+(use-package embark
+  :ensure t
+  :bind (("C-." . embark-act)
+         ("C-;" . embark-dwim)))
+
+(use-package embark-consult
+  :ensure t
+  :after (embark consult)
+  :hook (embark-collect-mode . consult-preview-at-point-mode))
+
+(use-package corfu
+  :ensure t
+  :custom
+  (corfu-auto t)
+  (corfu-auto-delay 0.15)
+  (corfu-auto-prefix 2)
+  (corfu-cycle t)
+  (corfu-preselect 'prompt)
+  :init
+  (global-corfu-mode 1))
+
+(use-package cape
+  :ensure t
+  :init
+  (add-to-list 'completion-at-point-functions #'cape-file))
+
+(use-package project
+  :ensure nil
+  :custom
+  (project-switch-commands
+   '((project-find-file "Find file")
+     (consult-project-buffer "Buffer")
+     (project-dired "Dired")
+     (consult-ripgrep "Ripgrep"))))
+
+(global-set-key (kbd "C-c p f") #'project-find-file)
+(global-set-key (kbd "C-c p p") #'project-switch-project)
+(global-set-key (kbd "C-c p k") #'project-kill-buffers)
+(global-set-key (kbd "C-c p t") #'aic-project-test)
 
 ;disable temporary gitgutter (global-git-gutter-mode +1)
 (use-package magit
   :ensure t
   :bind ("C-x g" . magit-status))
+
+(with-eval-after-load 'compile
+  (require 'ansi-color)
+  (setq compilation-auto-jump-to-first-error t
+        compilation-scroll-output 'first-error)
+  (add-hook 'compilation-filter-hook #'ansi-color-compilation-filter))
 
 ;{{{ Custom functions
 
@@ -342,7 +391,8 @@
 (global-set-key  [f7]  'htmlfontify-buffer)
 (global-set-key  [f8]  'ispell-buffer)
 (global-set-key  [f9]  'ispell-change-dictionary) ; Switching 'en_US' and 'hr' often
-(global-set-key [f10]  'menu-bar-mode)
+(global-set-key [f10]  'consult-buffer)
+(global-set-key [S-f10] 'consult-recent-file)
 (global-set-key [f11]  'toggle-frame-maximized)
 (global-set-key  [f12] 'kill-buffer)
 ;}}}
@@ -428,7 +478,11 @@
 ;; Show available key bindings after a prefix key.
 (use-package which-key
   :ensure t
-  :config (which-key-mode))
+  :config
+  (which-key-mode)
+  (which-key-add-key-based-replacements
+    "C-c p" "project"
+    "C-c x" "codex"))
 
 
 ;; Org Journal
@@ -488,10 +542,7 @@
 ;; Java / Spring Boot development
 (defun aic-project-root ()
   "Return the current project root or `default-directory'."
-  (or (when (and (fboundp 'projectile-project-root)
-                 (projectile-project-p))
-        (projectile-project-root))
-      (when-let ((project (project-current nil)))
+  (or (when-let ((project (project-current nil)))
         (car (project-roots project)))
       default-directory))
 
@@ -500,6 +551,78 @@
   (let ((path (expand-file-name file (aic-project-root))))
     (when (file-exists-p path)
       path)))
+
+(defun aic-project-test-command ()
+  "Return the conventional test command for the current project."
+  (cond
+   ((aic-file-in-project "mvnw") "./mvnw test")
+   ((aic-file-in-project "gradlew") "./gradlew test")
+   ((aic-file-in-project "pom.xml") "mvn test")
+   ((or (aic-file-in-project "build.gradle")
+        (aic-file-in-project "build.gradle.kts")) "gradle test")
+   ((aic-file-in-project "Cargo.toml") "cargo test")
+   ((aic-file-in-project "build.zig") "zig build test")
+   ((aic-file-in-project "Makefile") "make test")
+   (t compile-command)))
+
+(defun aic-project-test ()
+  "Run the conventional test command for the current project."
+  (interactive)
+  (let ((default-directory (aic-project-root)))
+    (compile (aic-project-test-command))))
+
+(defun aic-copy-to-clipboard (text)
+  "Copy TEXT to the kill ring and graphical clipboard."
+  (kill-new text)
+  (when (display-graphic-p)
+    (gui-set-selection 'CLIPBOARD text)))
+
+(defun aic-project-file-reference (&optional position)
+  "Return the current project-relative file and POSITION as a reference."
+  (unless buffer-file-name
+    (user-error "Current buffer does not visit a file"))
+  (format "%s:%d"
+          (file-relative-name buffer-file-name (aic-project-root))
+          (line-number-at-pos (or position (point)))))
+
+(defun aic-codex-copy-file-reference ()
+  "Copy the current project-relative file and line for Codex."
+  (interactive)
+  (let ((reference (aic-project-file-reference)))
+    (aic-copy-to-clipboard reference)
+    (message "Copied %s" reference)))
+
+(defun aic-codex-copy-region (start end)
+  "Copy region START to END with project-relative context for Codex."
+  (interactive "r")
+  (unless (use-region-p)
+    (user-error "Select a region first"))
+  (unless buffer-file-name
+    (user-error "Current buffer does not visit a file"))
+  (let* ((path (file-relative-name buffer-file-name (aic-project-root)))
+         (first-line (line-number-at-pos start))
+         (last-line (line-number-at-pos end))
+         (context (format "Context from %s:%d-%d\n\n%s"
+                          path first-line last-line
+                          (buffer-substring-no-properties start end))))
+    (aic-copy-to-clipboard context)
+    (message "Copied %s:%d-%d" path first-line last-line)))
+
+(defun aic-codex-open-project-session ()
+  "Open the current project's Codex tmux session in Ghostty."
+  (interactive)
+  (unless (executable-find "dev-session")
+    (user-error "dev-session is not available in PATH"))
+  (let ((root (directory-file-name (expand-file-name (aic-project-root)))))
+    (start-process "dev-session" "*dev-session*"
+                   "dev-session" "--launch" root)
+    (message "Opening Codex session for %s" root)))
+
+(define-prefix-command 'aic-codex-map)
+(global-set-key (kbd "C-c x") 'aic-codex-map)
+(define-key aic-codex-map (kbd "a") #'aic-codex-open-project-session)
+(define-key aic-codex-map (kbd "f") #'aic-codex-copy-file-reference)
+(define-key aic-codex-map (kbd "r") #'aic-codex-copy-region)
 
 (defun aic-java-build-tool-command (maven-command gradle-command)
   "Return a project-local Java build command.
@@ -659,7 +782,6 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
 (use-package clang-format
   :ensure t)
 
-(use-package helm-mode-manager :ensure t)
 (use-package docker-compose-mode :ensure t)
 (use-package dockerfile-mode :ensure t)
 (use-package nix-mode :ensure t)

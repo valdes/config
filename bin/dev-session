@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Runtime overrides: DEV_SESSION_CODEX and DEV_SESSION_TERMINAL.
+
+usage() {
+  echo "Usage: dev-session [--launch] [--name NAME] [PROJECT]" >&2
+}
+
+launch_terminal=false
+session_name=""
+codex_command=${DEV_SESSION_CODEX:-codex}
+terminal_command=${DEV_SESSION_TERMINAL:-ghostty}
+
+while (($#)); do
+  case "$1" in
+  --launch)
+    launch_terminal=true
+    shift
+    ;;
+  --name)
+    if (($# < 2)); then
+      usage
+      exit 2
+    fi
+    session_name=$2
+    shift 2
+    ;;
+  --help|-h)
+    usage
+    exit 0
+    ;;
+  --)
+    shift
+    break
+    ;;
+  -*)
+    echo "Unknown option: $1" >&2
+    usage
+    exit 2
+    ;;
+  *)
+    break
+    ;;
+  esac
+done
+
+if (($# > 1)); then
+  usage
+  exit 2
+fi
+
+project=${1:-$PWD}
+if [[ ! -d "$project" ]]; then
+  echo "Project directory does not exist: $project" >&2
+  exit 1
+fi
+
+project=$(realpath -- "$project")
+
+for command in tmux "$codex_command"; do
+  if ! command -v "$command" >/dev/null 2>&1; then
+    echo "Missing required command: $command" >&2
+    exit 1
+  fi
+done
+
+if [[ -z "$session_name" ]]; then
+  project_name=$(basename -- "$project")
+  project_name=${project_name//[^[:alnum:]_.-]/-}
+  session_name="dev-${project_name}"
+fi
+
+if [[ ! "$session_name" =~ ^[[:alnum:]_.-]+$ ]]; then
+  echo "Invalid session name: $session_name" >&2
+  exit 1
+fi
+
+if tmux has-session -t "=$session_name" 2>/dev/null; then
+  session_root=$(tmux show-options -t "=$session_name" -qv @project-root)
+  if [[ "$session_root" != "$project" ]]; then
+    echo "Session $session_name belongs to ${session_root:-an unknown project}." >&2
+    echo "Use --name to choose a distinct session name." >&2
+    exit 1
+  fi
+else
+  tmux new-session -d -s "$session_name" -n shell -c "$project"
+  tmux set-option -t "=$session_name" @project-root "$project" >/dev/null
+fi
+
+if ! tmux list-windows -t "=$session_name" -F '#{window_name}' | grep -Fxq agent; then
+  tmux new-window -d -t "=$session_name" -n agent -c "$project" "$codex_command"
+fi
+tmux select-window -t "=$session_name:agent"
+
+if $launch_terminal; then
+  if ! command -v "$terminal_command" >/dev/null 2>&1; then
+    echo "Missing required command: $terminal_command" >&2
+    exit 1
+  fi
+  "$terminal_command" --working-directory "$project" \
+    -e tmux attach-session -t "=$session_name" \
+    >/dev/null 2>&1 &
+elif [[ -n "${TMUX:-}" ]]; then
+  exec tmux switch-client -t "=$session_name"
+else
+  exec tmux attach-session -t "=$session_name"
+fi

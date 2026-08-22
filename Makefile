@@ -49,6 +49,7 @@ sync-hidden:
 
 sync-bin:
 	install -d "$(BIN_DIR)" "$(LOCAL_BIN_DIR)"
+	install -m 0755 "$(REPO_ROOT)/bin/dev-session" "$(BIN_DIR)/dev-session"
 	install -m 0755 "$(REPO_ROOT)/bin/niri-ctl" "$(BIN_DIR)/niri-ctl"
 	install -m 0755 "$(REPO_ROOT)/bin/install-system-deps-arch" "$(BIN_DIR)/install-system-deps-arch"
 	install -m 0755 "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(BIN_DIR)/install-system-deps-ubuntu26"
@@ -81,7 +82,7 @@ status:
 	git status --short
 
 doctor:
-	@for cmd in home-manager cp install git; do \
+	@for cmd in home-manager cp install git emacsclient tmux codex ghostty wl-copy wl-paste; do \
 		command -v "$$cmd" >/dev/null || { echo "missing: $$cmd"; exit 1; }; \
 	done
 
@@ -93,6 +94,7 @@ check:
 	test -f "$(REPO_ROOT)/ghostty/config"
 	test -f "$(REPO_ROOT)/background.jpg"
 	test -f "$(REPO_ROOT)/urls"
+	test -x "$(REPO_ROOT)/bin/dev-session"
 	test -f "$(REPO_ROOT)/bin/niri-ctl"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-arch"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
@@ -100,6 +102,7 @@ check:
 	test -f "$(REPO_ROOT)/bin/rssadd"
 	test -f "$(REPO_ROOT)/bin/rssget"
 	test -f "$(REPO_ROOT)/bin/toggle-waybar"
+	bash -n "$(REPO_ROOT)/bin/dev-session"
 	bash -n "$(REPO_ROOT)/bin/niri-ctl"
 	bash -n "$(REPO_ROOT)/bin/install-system-deps-arch"
 	bash -n "$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
