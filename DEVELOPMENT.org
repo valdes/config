@@ -6,12 +6,16 @@ documentation and application testing.
 
 ** Start a project
 
-From niri, press =Mod+P= and select a project. The project launcher creates or
-focuses three project workspaces:
+From niri, press =Mod+P= and select a project. The launcher starts three apps;
+Niri window rules place them on the existing workflow workspaces:
 
-- =<project>-main=: GUI Emacs opened through =emacsclient=.
-- =<project>-term=: Ghostty attached to the project's tmux session.
-- =<project>-browser=: the configured browser.
+- =build=: GUI Emacs opened through =emacsclient=.
+- =ops=: Ghostty attached to the project's tmux session.
+- =scratch=: the configured browser using the project-only
+  =dev.vals.ProjectBrowser= app ID.
+
+Normal browser windows do not match the project rule, so documentation windows
+can remain in =write=.
 
 Start the terminal workflow directly when the full desktop preset is not needed:
 
@@ -99,4 +103,3 @@ After editing the repo:
 
 =make check= validates managed files and shell syntax. =make sync= installs the
 repo-managed Emacs, tmux, niri, and helper configuration into the home directory.
-

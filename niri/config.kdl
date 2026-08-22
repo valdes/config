@@ -50,6 +50,23 @@ workspace "scratch" {
 
 // window rules
 window-rule {
+    match app-id=r#"^(emacs|Emacs)$"#
+    open-on-workspace "build"
+}
+
+// Project terminals use a distinct Ghostty app ID so ad-hoc terminals can
+// still open on the current workspace.
+window-rule {
+    match app-id=r#"^dev\.vals\.DevSession$"#
+    open-on-workspace "ops"
+}
+
+window-rule {
+    match app-id=r#"^dev\.vals\.ProjectBrowser$"#
+    open-on-workspace "scratch"
+}
+
+window-rule {
     match app-id="Slack"
     open-on-workspace "comm"
 }

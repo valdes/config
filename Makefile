@@ -102,6 +102,7 @@ check:
 	test -f "$(REPO_ROOT)/bin/rssadd"
 	test -f "$(REPO_ROOT)/bin/rssget"
 	test -f "$(REPO_ROOT)/bin/toggle-waybar"
+	niri validate -c "$(REPO_ROOT)/niri/config.kdl"
 	bash -n "$(REPO_ROOT)/bin/dev-session"
 	bash -n "$(REPO_ROOT)/bin/niri-ctl"
 	bash -n "$(REPO_ROOT)/bin/install-system-deps-arch"
