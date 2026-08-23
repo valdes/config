@@ -6,6 +6,7 @@
 ;;(package-initialize)
 
 (require 'package)
+(require 'subr-x)
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
 
@@ -482,7 +483,7 @@
   (which-key-mode)
   (which-key-add-key-based-replacements
     "C-c p" "project"
-    "C-c x" "codex"))
+    "C-c x" "agent"))
 
 
 ;; Org Journal
@@ -608,8 +609,8 @@
     (aic-copy-to-clipboard context)
     (message "Copied %s:%d-%d" path first-line last-line)))
 
-(defun aic-codex-task-context ()
-  "Return concise context for a Codex task handoff."
+(defun aic-agent-task-context ()
+  "Return concise context for an agent task handoff."
   (cond
    ((and (use-region-p) buffer-file-name)
     (let* ((start (region-beginning))
@@ -625,25 +626,83 @@
    (t
     "[add relevant files, errors, or command output]")))
 
-(defun aic-codex-copy-task-template ()
-  "Copy an editable, context-aware Codex task template."
+(defvar-local aic-dev-task-root nil)
+
+(defun aic-dev-task-cancel ()
+  "Delete and close the current unsubmitted task draft."
   (interactive)
-  (let ((template
-         (format
-          (concat "Outcome:\n"
-                  "[describe the concrete result]\n\n"
-                  "Context:\n"
-                  "%s\n\n"
-                  "Constraints:\n"
-                  "- Follow the active AGENTS.md instructions.\n"
-                  "- [add task-specific boundaries]\n\n"
-                  "Done when:\n"
-                  "- Relevant checks pass.\n"
-                  "- The final diff is reviewed.\n"
-                  "- [add an observable acceptance criterion]\n")
-          (aic-codex-task-context))))
-    (aic-copy-to-clipboard template)
-    (message "Copied Codex task template")))
+  (unless aic-dev-task-root
+    (user-error "Current buffer is not a dev task"))
+  (let ((file buffer-file-name))
+    (set-buffer-modified-p nil)
+    (when (and file (file-exists-p file))
+      (delete-file file))
+    (kill-buffer (current-buffer))
+    (message "Task draft cancelled")))
+
+(defun aic-dev-task-open (job)
+  "Open a context-aware task contract; include ticket fields when JOB is non-nil."
+  (let* ((root (directory-file-name (expand-file-name (aic-project-root))))
+         (context (aic-agent-task-context))
+         (project (file-name-nondirectory root))
+         (directory (expand-file-name project "~/tasks/"))
+         (archive (expand-file-name
+                   (format "%s-%s.org" (format-time-string "%Y%m%d-%H%M%S-%N")
+                           (if job "job" "personal"))
+                   directory)))
+    (make-directory directory t)
+    (set-file-modes (expand-file-name "~/tasks/") #o700)
+    (set-file-modes directory #o700)
+    (find-file archive)
+    (org-mode)
+    (setq-local aic-dev-task-root root)
+    (local-set-key [escape] #'aic-dev-task-cancel)
+    (insert
+     (format
+      (concat "Agent: codex\n"
+              "%s"
+              "Title:\n\n"
+              "* Outcome\n"
+              "[describe the concrete result]\n\n"
+              "* Context\n"
+              "%s\n\n"
+              "* Constraints\n"
+              "- Follow the active AGENTS.md instructions.\n"
+              "- [add task-specific boundaries]\n\n"
+              "* Done when\n"
+              "- Relevant checks pass.\n"
+              "- The final diff is reviewed.\n"
+              "- [add an observable acceptance criterion]\n")
+      (if job "Ticket:\n" "") context))
+    (save-buffer)
+    (set-file-modes archive #o600)
+    (goto-char (point-min))
+    (message "Edit the task, submit with C-c x s, or cancel with Escape")))
+
+(defun aic-dev-task-personal ()
+  "Open a personal dev-loop task contract."
+  (interactive)
+  (aic-dev-task-open nil))
+
+(defun aic-dev-task-job ()
+  "Open a ticketed dev-loop task contract."
+  (interactive)
+  (aic-dev-task-open t))
+
+(defun aic-dev-task-submit ()
+  "Archive and submit the current task contract to dev-loop."
+  (interactive)
+  (unless aic-dev-task-root
+    (user-error "Current buffer is not a dev task"))
+  (unless (executable-find "dev-loop")
+    (user-error "dev-loop is not available in PATH"))
+  (save-buffer)
+  (let ((default-directory (file-name-as-directory aic-dev-task-root)))
+    (start-process "dev-loop" "*dev-loop*" "dev-loop"
+                   "start-task" buffer-file-name))
+  (set-buffer-modified-p nil)
+  (kill-buffer (current-buffer))
+  (message "Task submitted; see *dev-loop* for launch errors"))
 
 (defun aic-codex-open-project-session ()
   "Open the current project's Codex tmux session in Ghostty."
@@ -660,7 +719,9 @@
 (define-key aic-codex-map (kbd "a") #'aic-codex-open-project-session)
 (define-key aic-codex-map (kbd "f") #'aic-codex-copy-file-reference)
 (define-key aic-codex-map (kbd "r") #'aic-codex-copy-region)
-(define-key aic-codex-map (kbd "t") #'aic-codex-copy-task-template)
+(define-key aic-codex-map (kbd "p") #'aic-dev-task-personal)
+(define-key aic-codex-map (kbd "j") #'aic-dev-task-job)
+(define-key aic-codex-map (kbd "s") #'aic-dev-task-submit)
 
 (defun aic-java-build-tool-command (maven-command gradle-command)
   "Return a project-local Java build command.

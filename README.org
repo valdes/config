@@ -85,9 +85,9 @@ Toggle Waybar visibility:
   make toggle-waybar
 #+end_src
 
-** Emacs and Codex
+** Emacs and agents
 
-Emacs owns editing, navigation, diagnostics, compilation, and review. Codex runs
+Emacs owns editing, navigation, diagnostics, compilation, and review. Agents run
 in the project's tmux session:
 
 #+begin_src sh :results output silent
@@ -95,17 +95,21 @@ in the project's tmux session:
   dev-session --launch ~/work/project
 #+end_src
 
-The session contains =agent= and =shell= windows. With the configured =C-x=
-tmux prefix, use =C-x a= for the agent and =C-x s= for the shell.
+The session contains permanent =agent= and =shell= windows. Each isolated task
+adds a window named after its task slug.
 
-Emacs uses =C-c x= for explicit Codex handoff:
+Emacs uses =C-c x= for explicit agent handoff:
 
 - =C-c x a= opens the project session in Ghostty.
 - =C-c x f= copies the current project-relative =file:line=.
 - =C-c x r= copies the selected region with file and line context.
+- =C-c x p= opens a personal task contract.
+- =C-c x j= opens a ticketed job task contract.
+- =C-c x s= archives and submits that contract to =dev-loop=.
 
-Project navigation remains under =C-c p=. Prompts are copied to the clipboard
-and are never submitted automatically.
+Project navigation remains under =C-c p=. Saving or closing a task buffer never
+submits it automatically. =Escape= deletes and cancels an unsubmitted draft;
+submitted contracts remain archived under =~/tasks/=.
 
 ** niri-ctl
 

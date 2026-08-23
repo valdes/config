@@ -58,7 +58,6 @@ sync-bin:
 	install -m 0755 "$(REPO_ROOT)/bin/rssadd" "$(LOCAL_BIN_DIR)/rssadd"
 	install -m 0755 "$(REPO_ROOT)/bin/rssget" "$(LOCAL_BIN_DIR)/rssget"
 	install -m 0755 "$(REPO_ROOT)/bin/toggle-waybar" "$(LOCAL_BIN_DIR)/toggle-waybar"
-	install -m 0755 "$(REPO_ROOT)/bin/workflow-log" "$(BIN_DIR)/workflow-log"
 
 switch:
 	nix $(NIX_FLAKE_FLAGS) run $(HOME_MANAGER_REF) -- switch --flake "path:$(REPO_ROOT)#vals"
@@ -84,7 +83,7 @@ status:
 	git status --short
 
 doctor:
-	@for cmd in home-manager cp install git glab emacsclient tmux codex claude ghostty wl-copy wl-paste; do \
+	@for cmd in home-manager cp install git glab emacs emacsclient tmux codex claude ghostty wl-copy wl-paste; do \
 		command -v "$$cmd" >/dev/null || { echo "missing: $$cmd"; exit 1; }; \
 	done
 
@@ -101,6 +100,7 @@ check:
 	test -x "$(REPO_ROOT)/bin/dev-loop"
 	test -f "$(REPO_ROOT)/skills/development-loop/SKILL.md"
 	test -x "$(REPO_ROOT)/tests/dev-loop-test"
+	test -x "$(REPO_ROOT)/tests/dev-session-test"
 	test -f "$(REPO_ROOT)/bin/niri-ctl"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-arch"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
@@ -108,7 +108,6 @@ check:
 	test -f "$(REPO_ROOT)/bin/rssadd"
 	test -f "$(REPO_ROOT)/bin/rssget"
 	test -f "$(REPO_ROOT)/bin/toggle-waybar"
-	test -x "$(REPO_ROOT)/bin/workflow-log"
 	niri validate -c "$(REPO_ROOT)/niri/config.kdl"
 	bash -n "$(REPO_ROOT)/bin/dev-session"
 	bash -n "$(REPO_ROOT)/bin/dev-loop"
@@ -119,6 +118,8 @@ check:
 	sh -n "$(REPO_ROOT)/bin/rssadd"
 	bash -n "$(REPO_ROOT)/bin/rssget"
 	bash -n "$(REPO_ROOT)/bin/toggle-waybar"
-	bash -n "$(REPO_ROOT)/bin/workflow-log"
 	bash -n "$(REPO_ROOT)/tests/dev-loop-test"
+	bash -n "$(REPO_ROOT)/tests/dev-session-test"
+	emacs --batch -Q --eval '(with-temp-buffer (insert-file-contents "$(REPO_ROOT)/.emacs") (emacs-lisp-mode) (check-parens))'
 	"$(REPO_ROOT)/tests/dev-loop-test"
+	"$(REPO_ROOT)/tests/dev-session-test"

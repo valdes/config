@@ -29,10 +29,13 @@ Use the direct command for projects outside =~/work= or nested below another
 project directory. The launcher and the Emacs =C-c x a= command both delegate
 terminal startup to =dev-session=.
 
-Sessions are named =dev-<project>= and contain two tmux windows:
+Sessions are named =dev-<project>= and contain two permanent tmux windows:
 
 - =agent=: Codex, rooted at the project directory.
 - =shell=: an independent shell for builds, tests, logs, and Git commands.
+
+Each =dev-loop= task adds a window named after its task slug. The window closes
+when its agent exits and can be recreated with =dev-loop resume=.
 
 With the =C-x= tmux prefix, use =C-x a= for the agent and =C-x s= for the shell.
 
@@ -57,60 +60,37 @@ Code intelligence uses Eglot and Flymake:
 Use =F10= for buffers, =Shift+F10= for recent files, =C-.= for contextual
 Embark actions, and =C-x g= for Magit.
 
-** Work with Codex
+** Work with agents
 
 Use =C-c x= to move explicit context from Emacs to the terminal agent:
 
 - =C-c x a=: open the current project's Codex session in Ghostty.
 - =C-c x f=: copy the current project-relative =file:line=.
 - =C-c x r=: copy the active region with its file and line range.
-- =C-c x t=: copy an editable task contract with current file or region context.
+- =C-c x p=: open a personal task contract.
+- =C-c x j=: open a job task contract with a ticket field.
+- =C-c x s=: archive and submit the current task contract.
 
-Paste into tmux with =C-x C-v=. Context is copied but never submitted
-automatically, so the final prompt remains visible and editable.
+Task contracts are submitted only by =C-c x s=; normal save and close commands
+never start an agent. Press =Escape= to delete and cancel an unsubmitted draft.
+Submitted contracts remain under =~/tasks/<project>/=.
 
 A normal change loop is:
 
 1. Check =git status= and create a checkpoint when the change is substantial.
-2. Give Codex one concrete outcome, constraints, and acceptance checks.
+2. Open =C-c x p= or =C-c x j= and fill the task contract.
 3. Add precise file or region context from Emacs when it reduces ambiguity.
 4. Inspect edits in Emacs or Magit instead of accepting the summary alone.
 5. Run focused tests, then the broader project checks from the =shell= window.
-6. Ask Codex to follow up on failures or use =/review= for a separate review pass.
-7. Review the final diff and commit manually.
+6. Submit with =C-c x s= and follow progress in the named tmux task window.
+7. Review the final diff and explicitly approve =dev-loop finish=.
 
-For substantial work, start from the =C-c x t= task contract. State one
-concrete outcome, only the context that changes the answer, task-specific
-constraints, and observable completion checks.
+The contract keeps =Agent= and =Title= at the top; job contracts also keep
+=Ticket=. State one concrete outcome, only the context that changes the answer,
+task-specific constraints, and observable completion checks.
 
 Choose model and permissions inside Codex with =/model= and =/permissions=.
 Do not hard-code broad permissions into the project launcher.
-
-** Measure agent utility
-
-Use =workflow-log= for a two-week comparison of complete tasks, including
-review and correction time:
-
-#+begin_src sh
-  workflow-log start ai debug "duplicate lesson investigation"
-  workflow-log status
-  workflow-log finish --review-fixes 1 --first-pass no --notes "one retry"
-
-  workflow-log start manual refactor "extract validation helper"
-  workflow-log finish --review-fixes 0 --first-pass yes
-  workflow-log report
-#+end_src
-
-Modes are =ai= and =manual=. Categories are =debug=, =feature=, =refactor=,
-=test=, =docs=, =review=, and =other=. Compare modes within the same category;
-the report is descriptive because tasks are not randomly assigned. The TSV is
-kept outside Git under =${XDG_STATE_HOME:-~/.local/state}/workflow-log/=
-(where the shell expression means XDG state when set, otherwise
-=~/.local/state=).
-
-Use =workflow-log cancel= to discard an active timer. After the measurement
-period, package only workflows that repeatedly save time or require the same
-corrections; do not add skills or scheduled automation before that review.
 
 ** Project test detection
 
@@ -172,6 +152,11 @@ Run =make doctor= to check the required commands.
 
 ** Start a task
 
+From Emacs, use =C-c x p= for personal work or =C-c x j= for ticketed job work.
+Fill =Agent= and =Title= in the template, plus =Ticket= for job work, then submit
+with =C-c x s=. Emacs stores it under =~/tasks/<project>/= with private
+permissions; =dev-loop= validates and reads the metadata.
+
 Run =start= from the clean primary checkout of a repository:
 
 #+begin_src sh :results output silent
@@ -198,6 +183,15 @@ implements the task, runs the repository's relevant checks, reviews the final
 diff, and reports assumptions and risks. Security-sensitive, infrastructure,
 concurrency, public API, destructive, unusually large, or materially uncertain
 changes also receive a read-only review from the other agent when available.
+The project tmux session keeps its generic =agent= and =shell= windows and adds
+a window named after this task.
+
+If the agent exits before the task is complete, resume it from the task
+worktree:
+
+#+begin_src sh :results output silent
+  dev-loop resume
+#+end_src
 
 ** Approve and finish
 
@@ -233,8 +227,10 @@ The whole personal loop starts and ends in the primary checkout:
   $ git status --short
   $ dev-loop start codex "Remove duplicate cache entries"
   Preparing worktree (new branch 'agent/remove-duplicate-cache-entries')
-  ...
+  Started agent/remove-duplicate-cache-entries in tmux window
+  remove-duplicate-cache-entries (...).
 
+  # Continue in the selected remove-duplicate-cache-entries tmux window.
   # Codex implements the change, runs checks, and presents the final diff.
   > Approved. Finish it.
   ...
@@ -258,8 +254,10 @@ The ticket selects the GitLab flow and determines the merge-request title:
   $ git status --short
   $ dev-loop start codex --ticket VID-1132 "Support new protocol"
   Preparing worktree (new branch 'agent/vid-1132-support-new-protocol')
-  ...
+  Started agent/vid-1132-support-new-protocol in tmux window
+  vid-1132-support-new-protocol (...).
 
+  # Continue in the selected vid-1132-support-new-protocol tmux window.
   # Codex implements the change, runs checks, and presents the MR handoff.
   > Approved. Create the merge request.
   ...
@@ -305,8 +303,9 @@ safely closed, run this from the primary checkout:
   dev-loop clean agent/vid-1132-support-new-protocol
 #+end_src
 
-Cleanup refuses unexpected worktree paths, unintegrated personal branches, and
-open merge requests.
+Cleanup refuses active task windows, unexpected worktree paths, unintegrated
+personal branches, and open merge requests. Archived task contracts are never
+removed automatically.
 
 ** Recovery and inspection
 
