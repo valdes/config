@@ -139,3 +139,187 @@ After editing the repo:
 
 =make check= validates managed files and shell syntax. =make sync= installs the
 repo-managed Emacs, tmux, niri, and helper configuration into the home directory.
+
+* Isolated agent task loop
+
+=dev-loop= is a small wrapper around Git worktrees, Codex or Claude, and
+GitLab merge requests. It gives the agent an isolated task checkout while the
+operator keeps control of review and integration.
+
+The workflow is intentionally supervised: the agent may inspect, edit, and run
+checks inside its worktree, but it must present the result and receive explicit
+approval before committing, merging, pushing, or opening a merge request. This
+is roughly autonomy level 2, with limited level 3 task execution inside the
+worktree. It does not run unattended or merge GitLab work automatically.
+
+** Install
+
+Apply this repository normally:
+
+#+begin_src sh :results output silent
+  make apply
+#+end_src
+
+This installs =dev-loop= in =~/bin=, =glab= through Home Manager, and the shared
+=development-loop= skill for Codex and Claude. Both agent CLIs must already be
+installed and authenticated. For GitLab work, authenticate =glab= as well:
+
+#+begin_src sh :results output silent
+  glab auth status
+#+end_src
+
+Run =make doctor= to check the required commands.
+
+** Start a task
+
+Run =start= from the clean primary checkout of a repository:
+
+#+begin_src sh :results output silent
+  dev-loop start codex "Improve cache invalidation"
+  dev-loop start claude "Improve cache invalidation"
+#+end_src
+
+For job work that needs a GitLab merge request, include the ticket:
+
+#+begin_src sh :results output silent
+  dev-loop start codex --ticket VID-1132 "Support new protocol"
+#+end_src
+
+Tickets must use uppercase project keys and a number, such as =VID-1132=. The
+tool creates:
+
+- branch =agent/vid-1132-support-new-protocol=;
+- worktree =<repo-parent>/.worktrees/<repo>/vid-1132-support-new-protocol=; and
+- local Git metadata recording the agent, starting commit, target branch,
+  ticket, and title.
+
+The selected agent opens in that worktree with the shared workflow skill. It
+implements the task, runs the repository's relevant checks, reviews the final
+diff, and reports assumptions and risks. Security-sensitive, infrastructure,
+concurrency, public API, destructive, unusually large, or materially uncertain
+changes also receive a read-only review from the other agent when available.
+
+** Approve and finish
+
+Review the agent's result. If it is acceptable, explicitly approve finishing in
+the same agent session.
+
+For a personal task without =--ticket=, =dev-loop finish= commits the work and
+fast-forwards the original local branch. It refuses to integrate if that branch
+has advanced or its checkout is dirty.
+
+For a ticketed task, the agent passes an approved handoff containing =Summary=,
+=Verification=, =Assumptions=, and =Risks= to =dev-loop finish=. The tool commits,
+pushes, and opens a GitLab merge request with the exact title:
+
+#+begin_example
+  [VID-1132] - Support new protocol
+#+end_example
+
+The merge request remains for human review and merge; auto-merge is never
+enabled.
+
+Codex may request permission when finishing needs network access or must update
+the primary checkout. Claude runs with a stricter sandbox and may be unable to
+perform the final integration step. In that case, leave the reviewed task
+worktree unchanged and run =dev-loop finish= there from the normal terminal.
+
+** Personal terminal session
+
+The whole personal loop starts and ends in the primary checkout:
+
+#+begin_example
+  $ cd ~/Github/project
+  $ git status --short
+  $ dev-loop start codex "Remove duplicate cache entries"
+  Preparing worktree (new branch 'agent/remove-duplicate-cache-entries')
+  ...
+
+  # Codex implements the change, runs checks, and presents the final diff.
+  > Approved. Finish it.
+  ...
+  Integrated agent/remove-duplicate-cache-entries into main.
+  Cleanup: dev-loop clean agent/remove-duplicate-cache-entries
+
+  $ dev-loop clean agent/remove-duplicate-cache-entries
+  Deleted branch agent/remove-duplicate-cache-entries (...).
+#+end_example
+
+If the agent cannot perform the approved finish from its sandbox, open the
+reported worktree in the normal terminal, run =dev-loop finish= there, then
+return to the primary checkout for cleanup.
+
+** Job terminal session
+
+The ticket selects the GitLab flow and determines the merge-request title:
+
+#+begin_example
+  $ cd ~/work/project
+  $ git status --short
+  $ dev-loop start codex --ticket VID-1132 "Support new protocol"
+  Preparing worktree (new branch 'agent/vid-1132-support-new-protocol')
+  ...
+
+  # Codex implements the change, runs checks, and presents the MR handoff.
+  > Approved. Create the merge request.
+  ...
+  Creating merge request for agent/vid-1132-support-new-protocol into main
+  [VID-1132] - Support new protocol
+
+  # Later, process one round of reviewer feedback from the task worktree.
+  $ cd ../.worktrees/project/vid-1132-support-new-protocol
+  $ dev-loop feedback
+  ...
+
+  # After the merge request is merged, clean up from the primary checkout.
+  $ cd ~/work/project
+  $ dev-loop clean agent/vid-1132-support-new-protocol
+  Deleted branch agent/vid-1132-support-new-protocol (...).
+#+end_example
+
+The agent generates the required =Summary=, =Verification=, =Assumptions=, and
+=Risks= description during the approved finish. The operator reviews and merges
+the resulting MR in GitLab.
+
+** Merge-request feedback
+
+After reviewers add comments, run one feedback pass from the task worktree:
+
+#+begin_src sh :results output silent
+  cd ../.worktrees/project/vid-1132-support-new-protocol
+  dev-loop feedback
+#+end_src
+
+The same agent inspects unresolved discussions, handles clear in-scope requests,
+runs checks, pushes the fixes, and replies to the addressed threads. Ambiguous,
+architectural, security-sensitive, conflicting, or scope-expanding requests are
+returned to the operator. A feedback invocation is one pass; there is no
+background polling.
+
+** Clean up
+
+After personal work is integrated or the GitLab merge request is merged or
+safely closed, run this from the primary checkout:
+
+#+begin_src sh :results output silent
+  dev-loop clean agent/vid-1132-support-new-protocol
+#+end_src
+
+Cleanup refuses unexpected worktree paths, unintegrated personal branches, and
+open merge requests.
+
+** Recovery and inspection
+
+Worktrees and branch metadata are ordinary Git state:
+
+#+begin_src sh :results output silent
+  git worktree list
+  git config --get-regexp '^branch\.agent/.*\.dev-loop-'
+#+end_src
+
+If a personal target branch advances, rebase the task onto the new target,
+update its =dev-loop-base= metadata to that target commit, rerun affected checks,
+and review and approve the refreshed result before finishing. The agent skill
+contains the exact recovery rule.
+
+Use =dev-loop help= for the compact command reference.

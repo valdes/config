@@ -89,6 +89,7 @@ doctor:
 	done
 
 check:
+	test -f "$(REPO_ROOT)/DEVELOPMENT.org"
 	test -f "$(REPO_ROOT)/home.nix"
 	test -f "$(REPO_ROOT)/niri/config.kdl"
 	test -f "$(REPO_ROOT)/waybar/config.jsonc"
