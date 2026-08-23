@@ -88,6 +88,7 @@
     # dev
     git
     gh # github cli client
+    glab # gitlab cli client
     difftastic
     jq # json cli tool
     httpie # curl
@@ -406,6 +407,8 @@
   # copy dot files
   home.file.".config/ghostty/config".source = ./ghostty/config;
   home.file.".tmux.conf".source                       = ./.tmux.conf;
+  home.file.".agents/skills/development-loop".source = ./skills/development-loop;
+  home.file.".claude/skills/development-loop".source = ./skills/development-loop;
 
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage

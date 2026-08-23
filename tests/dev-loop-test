@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_script=$(realpath "$(dirname "$0")/../bin/dev-loop")
+test_root=$(mktemp -d /tmp/dev-loop-test.XXXXXX)
+trap 'case "$test_root" in /tmp/dev-loop-test.*) rm -rf -- "$test_root" ;; esac' EXIT
+
+fail() {
+  echo "FAIL: $*" >&2
+  exit 1
+}
+
+assert_contains() {
+  grep -F -- "$2" "$1" >/dev/null || fail "$1 does not contain: $2"
+}
+
+new_repo() {
+  local path=$1
+  mkdir -p "$path"
+  git -C "$path" init -q -b main
+  git -C "$path" config user.name "Dev Loop Test"
+  git -C "$path" config user.email "dev-loop@example.invalid"
+  printf 'base\n' >"$path/file.txt"
+  git -C "$path" add file.txt
+  git -C "$path" commit -qm "Initial"
+}
+
+mock_bin="$test_root/bin"
+mkdir -p "$mock_bin"
+
+cat >"$mock_bin/mock-codex" <<'EOF'
+#!/usr/bin/env bash
+printf 'cwd=%s\n' "$PWD" >>"$DEV_LOOP_TEST_LOG"
+printf 'arg=%s\n' "$@" >>"$DEV_LOOP_TEST_LOG"
+EOF
+chmod +x "$mock_bin/mock-codex"
+
+cat >"$mock_bin/mock-claude" <<'EOF'
+#!/usr/bin/env bash
+printf 'cwd=%s\n' "$PWD" >>"$DEV_LOOP_TEST_LOG"
+printf 'arg=%s\n' "$@" >>"$DEV_LOOP_TEST_LOG"
+EOF
+chmod +x "$mock_bin/mock-claude"
+
+cat >"$mock_bin/mock-glab" <<'EOF'
+#!/usr/bin/env bash
+printf 'glab=%s\n' "$*" >>"$DEV_LOOP_TEST_LOG"
+if [[ "$*" == *"mr view"* ]]; then
+  printf '%s\n' "${DEV_LOOP_TEST_MR_STATE:-merged}"
+fi
+EOF
+chmod +x "$mock_bin/mock-glab"
+
+export PATH="$mock_bin:$PATH"
+export DEV_LOOP_CODEX=mock-codex
+export DEV_LOOP_CLAUDE=mock-claude
+export DEV_LOOP_GLAB=mock-glab
+export DEV_LOOP_TEST_LOG="$test_root/calls.log"
+
+personal="$test_root/personal"
+new_repo "$personal"
+(
+  cd "$personal"
+  "$repo_script" start codex "Small task"
+)
+personal_worktree="$test_root/.worktrees/personal/small-task"
+[[ -d "$personal_worktree" ]] || fail "personal worktree was not created beside repository"
+[[ "$(git -C "$personal" config --get branch.agent/small-task.dev-loop-agent)" == codex ]] || fail "agent metadata missing"
+assert_contains "$DEV_LOOP_TEST_LOG" "arg=workspace-write"
+
+printf 'changed\n' >>"$personal_worktree/file.txt"
+(
+  cd "$personal_worktree"
+  "$repo_script" finish
+)
+assert_contains "$personal/file.txt" "changed"
+(
+  cd "$personal"
+  "$repo_script" clean agent/small-task
+)
+[[ ! -e "$personal_worktree" ]] || fail "personal worktree was not removed"
+
+moved="$test_root/moved"
+new_repo "$moved"
+(
+  cd "$moved"
+  "$repo_script" start codex "Stale task"
+)
+moved_worktree="$test_root/.worktrees/moved/stale-task"
+printf 'target moved\n' >>"$moved/file.txt"
+git -C "$moved" add file.txt
+git -C "$moved" commit -qm "Move target"
+printf 'worktree changed\n' >>"$moved_worktree/file.txt"
+if (cd "$moved_worktree" && "$repo_script" finish >/dev/null 2>&1); then
+  fail "finish accepted an advanced target branch"
+fi
+
+work="$test_root/work"
+remote="$test_root/work.git"
+new_repo "$work"
+git init -q --bare "$remote"
+git -C "$work" remote add origin "$remote"
+git -C "$work" push -q -u origin main
+(
+  cd "$work"
+  "$repo_script" start claude --ticket VID-1132 "Support new protocol"
+)
+work_worktree="$test_root/.worktrees/work/vid-1132-support-new-protocol"
+[[ -d "$work_worktree" ]] || fail "GitLab worktree path is incorrect"
+assert_contains "$DEV_LOOP_TEST_LOG" 'arg={"sandbox":{"enabled":true,"failIfUnavailable":true,"allowUnsandboxedCommands":false}}'
+printf 'protocol\n' >>"$work_worktree/file.txt"
+if (cd "$work_worktree" && "$repo_script" finish >/dev/null 2>&1); then
+  fail "GitLab finish accepted a missing handoff"
+fi
+[[ -n "$(git -C "$work_worktree" status --porcelain)" ]] || fail "failed GitLab finish changed the worktree"
+(
+  cd "$work_worktree"
+  printf '## Summary\n\nProtocol support.\n\n## Verification\n\nTests pass.\n\n## Assumptions\n\nNone.\n\n## Risks\n\nNone.\n' | \
+    "$repo_script" finish --description-file -
+  "$repo_script" feedback
+)
+assert_contains "$DEV_LOOP_TEST_LOG" "glab=mr create --source-branch agent/vid-1132-support-new-protocol --target-branch main --title [VID-1132] - Support new protocol"
+assert_contains "$DEV_LOOP_TEST_LOG" "GitLab feedback mode"
+
+export DEV_LOOP_TEST_MR_STATE=opened
+if (cd "$work" && "$repo_script" clean agent/vid-1132-support-new-protocol >/dev/null 2>&1); then
+  fail "cleanup accepted an open merge request"
+fi
+export DEV_LOOP_TEST_MR_STATE=merged
+(
+  cd "$work"
+  "$repo_script" clean agent/vid-1132-support-new-protocol
+)
+[[ ! -e "$work_worktree" ]] || fail "GitLab worktree was not removed"
+
+if (cd "$work" && "$repo_script" start codex --ticket vid-1 "Bad ticket" >/dev/null 2>&1); then
+  fail "lowercase ticket was accepted"
+fi
+
+echo "dev-loop tests passed"
