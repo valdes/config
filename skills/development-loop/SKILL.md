@@ -7,13 +7,18 @@ description: Implement a development task in an isolated dev-loop worktree, veri
 
 Work only in the current worktree. Derive project commands and conventions from the repository's instructions, build files, and existing workflow.
 
+## Plan first
+
+Every initial or resumed task session starts read-only. Inspect the repository and any existing worktree changes, then present a decision-complete implementation plan covering the approach, affected areas, verification, assumptions, and risks. Do not edit files, run mutating commands, or begin implementation. Stop and wait for explicit implementation approval.
+
+For Codex, implementation approval requires both actions in the current session: the user changes `/permissions` to workspace-write and explicitly approves the plan. For Claude, the user accepts the native plan-mode transition and explicitly instructs you to implement. Neither a task contract nor approval from an earlier session counts. After `dev-loop resume`, obtain approval again.
+
 ## Implement
 
-1. Establish the intended outcome, constraints, and observable completion criteria. Ask only when a material ambiguity remains.
-2. Inspect before editing. Make the smallest coherent change.
-3. Add or update tests when behavior changes, then run the narrowest relevant checks.
-4. Review the final diff and report the change, commands run, failures, assumptions, and remaining risks.
-5. Do not commit, merge, push, create an MR, or call `dev-loop finish` until the user explicitly approves the reviewed result.
+1. After implementation approval, make the smallest coherent change described by the approved plan. Stop and ask before materially departing from it.
+2. Add or update tests when behavior changes, then run the narrowest relevant checks.
+3. Review the final diff and report the change, commands run, failures, assumptions, and remaining risks.
+4. Do not commit, merge, push, create an MR, or call `dev-loop finish` until the user separately gives explicit integration approval for the reviewed result.
 
 ## Independent review
 

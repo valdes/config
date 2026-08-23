@@ -97,7 +97,9 @@ in the project's tmux session:
 #+end_src
 
 The session contains permanent =agent= and =shell= windows. Each isolated task
-adds a window named after its task slug.
+adds a window named after its task slug. New and resumed task windows start in a
+read-only planning phase; implementation begins only after the operator reviews
+the plan, unlocks write access, and explicitly approves it.
 
 Emacs uses =C-c x= for explicit agent handoff:
 

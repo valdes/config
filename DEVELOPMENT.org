@@ -80,10 +80,11 @@ A normal change loop is:
 1. Check =git status= and create a checkpoint when the change is substantial.
 2. Open =C-c x p= or =C-c x j= and fill the task contract.
 3. Add precise file or region context from Emacs when it reduces ambiguity.
-4. Inspect edits in Emacs or Magit instead of accepting the summary alone.
-5. Run focused tests, then the broader project checks from the =shell= window.
-6. Submit with =C-c x s= and follow progress in the named tmux task window.
-7. Review the final diff and explicitly approve =dev-loop finish=.
+4. Submit with =C-c x s= and review the agent's read-only investigation and plan.
+5. Unlock write access and explicitly approve implementation in the task session.
+6. Inspect edits in Emacs or Magit instead of accepting the summary alone.
+7. Run focused tests, then the broader project checks from the =shell= window.
+8. Review the final diff and separately approve =dev-loop finish=.
 
 The contract keeps =Agent= and =Title= at the top; job contracts also keep
 =Ticket=. State one concrete outcome, only the context that changes the answer,
@@ -126,11 +127,14 @@ repo-managed Emacs, tmux, niri, and helper configuration into the home directory
 GitLab merge requests. It gives the agent an isolated task checkout while the
 operator keeps control of review and integration.
 
-The workflow is intentionally supervised: the agent may inspect, edit, and run
-checks inside its worktree, but it must present the result and receive explicit
-approval before committing, merging, pushing, or opening a merge request. This
-is roughly autonomy level 2, with limited level 3 task execution inside the
-worktree. It does not run unattended or merge GitLab work automatically.
+The workflow is intentionally supervised. Every new or resumed task session
+starts read-only: the agent investigates and presents a plan before the
+operator grants write access and explicitly approves implementation. After the
+agent edits and runs checks inside its worktree, it must present the result and
+receive separate approval before committing, merging, pushing, or opening a
+merge request. This is roughly autonomy level 2, with limited level 3 task
+execution inside the worktree. It does not run unattended or merge GitLab work
+automatically.
 
 ** Install
 
@@ -215,8 +219,12 @@ tool creates:
 - local Git metadata recording the agent, starting commit, target branch,
   ticket, and title.
 
-The selected agent opens in that worktree with the shared workflow skill. It
-implements the task, runs the repository's relevant checks, reviews the final
+The selected agent opens in that worktree with the shared workflow skill and
+read-only access. It investigates the repository, presents a decision-complete
+plan, and waits. For Codex, use =/permissions= to select workspace-write and
+then explicitly approve the plan. For Claude, accept the native plan-mode
+transition and explicitly instruct it to implement. The agent then implements
+the approved plan, runs the repository's relevant checks, reviews the final
 diff, and reports assumptions and risks. Security-sensitive, infrastructure,
 concurrency, public API, destructive, unusually large, or materially uncertain
 changes also receive a read-only review from the other agent when available.
@@ -229,6 +237,10 @@ worktree:
 #+begin_src sh :results output silent
   dev-loop resume
 #+end_src
+
+Every resumed session starts read-only again. Review its continuation plan,
+unlock write access, and approve implementation again; approval is not carried
+between sessions.
 
 ** Approve and finish
 
@@ -268,6 +280,10 @@ The whole personal loop starts and ends in the primary checkout:
   remove-duplicate-cache-entries (...).
 
   # Continue in the selected remove-duplicate-cache-entries tmux window.
+  # Codex investigates and presents an implementation plan without editing.
+  > /permissions
+  # Select workspace-write.
+  > Approved. Implement the plan.
   # Codex implements the change, runs checks, and presents the final diff.
   > Approved. Finish it.
   ...
@@ -295,6 +311,10 @@ The ticket selects the GitLab flow and determines the merge-request title:
   vid-1132-support-new-protocol (...).
 
   # Continue in the selected vid-1132-support-new-protocol tmux window.
+  # Codex investigates and presents an implementation plan without editing.
+  > /permissions
+  # Select workspace-write.
+  > Approved. Implement the plan.
   # Codex implements the change, runs checks, and presents the MR handoff.
   > Approved. Create the merge request.
   ...
