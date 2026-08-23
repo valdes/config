@@ -608,6 +608,43 @@
     (aic-copy-to-clipboard context)
     (message "Copied %s:%d-%d" path first-line last-line)))
 
+(defun aic-codex-task-context ()
+  "Return concise context for a Codex task handoff."
+  (cond
+   ((and (use-region-p) buffer-file-name)
+    (let* ((start (region-beginning))
+           (end (region-end))
+           (path (file-relative-name buffer-file-name (aic-project-root)))
+           (first-line (line-number-at-pos start))
+           (last-line (line-number-at-pos end)))
+      (format "Context from %s:%d-%d\n\n%s"
+              path first-line last-line
+              (buffer-substring-no-properties start end))))
+   (buffer-file-name
+    (aic-project-file-reference))
+   (t
+    "[add relevant files, errors, or command output]")))
+
+(defun aic-codex-copy-task-template ()
+  "Copy an editable, context-aware Codex task template."
+  (interactive)
+  (let ((template
+         (format
+          (concat "Outcome:\n"
+                  "[describe the concrete result]\n\n"
+                  "Context:\n"
+                  "%s\n\n"
+                  "Constraints:\n"
+                  "- Follow the active AGENTS.md instructions.\n"
+                  "- [add task-specific boundaries]\n\n"
+                  "Done when:\n"
+                  "- Relevant checks pass.\n"
+                  "- The final diff is reviewed.\n"
+                  "- [add an observable acceptance criterion]\n")
+          (aic-codex-task-context))))
+    (aic-copy-to-clipboard template)
+    (message "Copied Codex task template")))
+
 (defun aic-codex-open-project-session ()
   "Open the current project's Codex tmux session in Ghostty."
   (interactive)
@@ -623,6 +660,7 @@
 (define-key aic-codex-map (kbd "a") #'aic-codex-open-project-session)
 (define-key aic-codex-map (kbd "f") #'aic-codex-copy-file-reference)
 (define-key aic-codex-map (kbd "r") #'aic-codex-copy-region)
+(define-key aic-codex-map (kbd "t") #'aic-codex-copy-task-template)
 
 (defun aic-java-build-tool-command (maven-command gradle-command)
   "Return a project-local Java build command.

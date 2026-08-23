@@ -61,6 +61,15 @@ This repo contains personal Linux configuration. Do not normalize it into a gene
 - Do not introduce complexity to impress future maintainers.
 - Do not treat this repo like a public starter template.
 
+## Verification
+
+- Run the narrowest relevant check first.
+- After changing repo-managed config or scripts, run `make check`.
+- Report the commands run and any failures.
+- Review the final diff before declaring the task complete.
+- Do not run `make sync`, `make switch`, or otherwise alter the live home
+  environment unless explicitly requested.
+
 ## When Unsure
 
 - Follow the current repo style.

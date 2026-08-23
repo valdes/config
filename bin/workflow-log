@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly STATE_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/workflow-log"
+readonly LOG_FILE="$STATE_ROOT/tasks.tsv"
+readonly ACTIVE_FILE="$STATE_ROOT/active.tsv"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  workflow-log start MODE CATEGORY DESCRIPTION
+  workflow-log status
+  workflow-log finish --review-fixes N --first-pass yes|no [--notes TEXT]
+  workflow-log cancel
+  workflow-log report
+
+Modes:      ai, manual
+Categories: debug, feature, refactor, test, docs, review, other
+EOF
+}
+
+fail() {
+  printf 'Error: %s\n' "$1" >&2
+  exit 1
+}
+
+normalize_field() {
+  printf '%s' "$1" | tr '\t\r\n' '   '
+}
+
+ensure_state() {
+  install -d "$STATE_ROOT"
+}
+
+ensure_log() {
+  if [[ ! -f "$LOG_FILE" ]]; then
+    printf '%s\n' \
+      $'id\tstarted_at\tfinished_at\tmode\tcategory\tproject\telapsed_seconds\treview_fixes\tfirst_pass\tdescription\tnotes' \
+      > "$LOG_FILE"
+  fi
+}
+
+validate_mode() {
+  case "$1" in
+    ai|manual) ;;
+    *) fail "mode must be ai or manual" ;;
+  esac
+}
+
+validate_category() {
+  case "$1" in
+    debug|feature|refactor|test|docs|review|other) ;;
+    *) fail "unknown category: $1" ;;
+  esac
+}
+
+start_task() {
+  (($# == 3)) || { usage >&2; exit 2; }
+
+  local mode=$1
+  local category=$2
+  local description
+  local project
+  local started_at
+  local start_epoch
+  local task_id
+
+  validate_mode "$mode"
+  validate_category "$category"
+  description=$(normalize_field "$3")
+  [[ -n "$description" ]] || fail "description must not be empty"
+
+  ensure_state
+  [[ ! -f "$ACTIVE_FILE" ]] || fail "a task is already active; finish or cancel it first"
+  ensure_log
+
+  project=$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$PWD")
+  project=$(normalize_field "$project")
+  start_epoch=$(date +%s)
+  started_at=$(date --iso-8601=seconds)
+  task_id=$(date -u +%Y%m%dT%H%M%S%N)
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$task_id" "$start_epoch" "$started_at" "$mode" "$category" "$project" "$description" \
+    > "$ACTIVE_FILE"
+  printf 'Started %s task: %s\n' "$mode" "$description"
+}
+
+show_status() {
+  [[ -f "$ACTIVE_FILE" ]] || fail "no task is active"
+
+  local task_id start_epoch started_at mode category project description now elapsed
+  IFS=$'\t' read -r task_id start_epoch started_at mode category project description < "$ACTIVE_FILE"
+  now=$(date +%s)
+  elapsed=$((now - start_epoch))
+
+  printf 'Mode:        %s\n' "$mode"
+  printf 'Category:    %s\n' "$category"
+  printf 'Project:     %s\n' "$project"
+  printf 'Started:     %s\n' "$started_at"
+  printf 'Elapsed:     %dm %ds\n' "$((elapsed / 60))" "$((elapsed % 60))"
+  printf 'Description: %s\n' "$description"
+}
+
+finish_task() {
+  local review_fixes=""
+  local first_pass=""
+  local notes=""
+
+  while (($#)); do
+    case "$1" in
+      --review-fixes)
+        (($# >= 2)) || fail "--review-fixes requires a value"
+        review_fixes=$2
+        shift 2
+        ;;
+      --first-pass)
+        (($# >= 2)) || fail "--first-pass requires a value"
+        first_pass=$2
+        shift 2
+        ;;
+      --notes)
+        (($# >= 2)) || fail "--notes requires a value"
+        notes=$(normalize_field "$2")
+        shift 2
+        ;;
+      *)
+        fail "unknown finish option: $1"
+        ;;
+    esac
+  done
+
+  [[ "$review_fixes" =~ ^[0-9]+$ ]] || fail "--review-fixes must be a non-negative integer"
+  case "$first_pass" in
+    yes|no) ;;
+    *) fail "--first-pass must be yes or no" ;;
+  esac
+  [[ -f "$ACTIVE_FILE" ]] || fail "no task is active"
+
+  local task_id start_epoch started_at mode category project description
+  local finish_epoch finished_at elapsed
+  IFS=$'\t' read -r task_id start_epoch started_at mode category project description < "$ACTIVE_FILE"
+  finish_epoch=$(date +%s)
+  finished_at=$(date --iso-8601=seconds)
+  elapsed=$((finish_epoch - start_epoch))
+
+  ensure_log
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$task_id" "$started_at" "$finished_at" "$mode" "$category" \
+    "$project" "$elapsed" "$review_fixes" "$first_pass" "$description" "$notes" \
+    >> "$LOG_FILE"
+  rm -- "$ACTIVE_FILE"
+  printf 'Finished %s task in %dm %ds.\n' "$mode" "$((elapsed / 60))" "$((elapsed % 60))"
+}
+
+cancel_task() {
+  [[ -f "$ACTIVE_FILE" ]] || fail "no task is active"
+  rm -- "$ACTIVE_FILE"
+  printf 'Active task discarded. Completed records were not changed.\n'
+}
+
+show_report() {
+  if [[ ! -f "$LOG_FILE" ]] || [[ $(wc -l < "$LOG_FILE") -le 1 ]]; then
+    printf 'No completed tasks.\n'
+    return
+  fi
+
+  awk -F '\t' '
+    NR > 1 {
+      count[$4]++
+      elapsed[$4] += $7
+      fixes[$4] += $8
+      if ($9 == "yes") pass[$4]++
+    }
+    END {
+      printf "%-8s %7s %12s %10s %12s\n", "mode", "tasks", "avg minutes", "avg fixes", "first pass"
+      for (i = 1; i <= 2; i++) {
+        mode = (i == 1 ? "ai" : "manual")
+        if (count[mode] > 0) {
+          printf "%-8s %7d %12.1f %10.2f %11.1f%%\n", mode, count[mode], \
+            elapsed[mode] / count[mode] / 60, fixes[mode] / count[mode], \
+            pass[mode] / count[mode] * 100
+        }
+      }
+    }
+  ' "$LOG_FILE"
+}
+
+action=${1:-help}
+if (($#)); then
+  shift
+fi
+
+case "$action" in
+  start) start_task "$@" ;;
+  status) (($# == 0)) || { usage >&2; exit 2; }; show_status ;;
+  finish) finish_task "$@" ;;
+  cancel) (($# == 0)) || { usage >&2; exit 2; }; cancel_task ;;
+  report) (($# == 0)) || { usage >&2; exit 2; }; show_report ;;
+  help|-h|--help) usage ;;
+  *) usage >&2; exit 2 ;;
+esac

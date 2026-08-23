@@ -57,6 +57,7 @@ sync-bin:
 	install -m 0755 "$(REPO_ROOT)/bin/rssadd" "$(LOCAL_BIN_DIR)/rssadd"
 	install -m 0755 "$(REPO_ROOT)/bin/rssget" "$(LOCAL_BIN_DIR)/rssget"
 	install -m 0755 "$(REPO_ROOT)/bin/toggle-waybar" "$(LOCAL_BIN_DIR)/toggle-waybar"
+	install -m 0755 "$(REPO_ROOT)/bin/workflow-log" "$(BIN_DIR)/workflow-log"
 
 switch:
 	nix $(NIX_FLAKE_FLAGS) run $(HOME_MANAGER_REF) -- switch --flake "path:$(REPO_ROOT)#vals"
@@ -102,6 +103,7 @@ check:
 	test -f "$(REPO_ROOT)/bin/rssadd"
 	test -f "$(REPO_ROOT)/bin/rssget"
 	test -f "$(REPO_ROOT)/bin/toggle-waybar"
+	test -x "$(REPO_ROOT)/bin/workflow-log"
 	niri validate -c "$(REPO_ROOT)/niri/config.kdl"
 	bash -n "$(REPO_ROOT)/bin/dev-session"
 	bash -n "$(REPO_ROOT)/bin/niri-ctl"
@@ -111,3 +113,4 @@ check:
 	sh -n "$(REPO_ROOT)/bin/rssadd"
 	bash -n "$(REPO_ROOT)/bin/rssget"
 	bash -n "$(REPO_ROOT)/bin/toggle-waybar"
+	bash -n "$(REPO_ROOT)/bin/workflow-log"
