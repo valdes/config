@@ -157,6 +157,43 @@ Fill =Agent= and =Title= in the template, plus =Ticket= for job work, then submi
 with =C-c x s=. Emacs stores it under =~/tasks/<project>/= with private
 permissions; =dev-loop= validates and reads the metadata.
 
+=templates/agent-task.md= provides the same contract as a standalone Markdown
+file for later use as an Obsidian template. It is personal by default; add a
+=Ticket: VID-1132= line above =Title= for job work.
+
+** Use the template with Obsidian
+
+Copy the template into the templates directory of the relevant Obsidian vault:
+
+#+begin_src sh :results output silent
+  cp templates/agent-task.md "/path/to/vault/Templates/Agent task.md"
+#+end_src
+
+Enable Obsidian's core =Templates= plugin and select that directory as the
+template folder. For each task, create a note and insert =Agent task=.
+
+For personal work, fill =Agent= and =Title= and leave the template without a
+=Ticket:= line. For job work, add the ticket above =Title=:
+
+#+begin_src markdown
+  Agent: codex
+  Ticket: VID-1132
+  Title: Support new protocol
+#+end_src
+
+Fill =Outcome=, =Context=, =Constraints=, and =Done when=, then save the note.
+From the clean primary checkout of the project, submit its absolute path:
+
+#+begin_src sh :results output silent
+  cd ~/work/project
+  dev-loop start-task "/path/to/vault/Tasks/support-new-protocol.md"
+#+end_src
+
+=dev-loop= reads =Agent=, =Ticket= when present, and =Title= from the note. It
+keeps the note unchanged, creates the adjacent worktree, and opens the named
+task window in the project's tmux session. The Obsidian note remains the task
+contract used by =dev-loop resume= and can be kept as the permanent record.
+
 Run =start= from the clean primary checkout of a repository:
 
 #+begin_src sh :results output silent

@@ -99,6 +99,7 @@ check:
 	test -x "$(REPO_ROOT)/bin/dev-session"
 	test -x "$(REPO_ROOT)/bin/dev-loop"
 	test -f "$(REPO_ROOT)/skills/development-loop/SKILL.md"
+	test -f "$(REPO_ROOT)/templates/agent-task.md"
 	test -x "$(REPO_ROOT)/tests/dev-loop-test"
 	test -x "$(REPO_ROOT)/tests/dev-session-test"
 	test -f "$(REPO_ROOT)/bin/niri-ctl"

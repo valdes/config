@@ -2,6 +2,7 @@
 Personal Linux workstation configuration.
 
 The day-to-day coding loop is documented in [[file:DEVELOPMENT.org][DEVELOPMENT.org]].
+That guide also covers using =templates/agent-task.md= from an Obsidian vault.
 
 ** Workflow
 
