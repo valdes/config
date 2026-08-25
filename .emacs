@@ -145,8 +145,6 @@
 ;; Completion and project navigation
 (define-prefix-command 'aic-project-map)
 (global-set-key (kbd "C-c p") 'aic-project-map)
-(define-prefix-command 'aic-java-map)
-(global-set-key (kbd "C-c j") 'aic-java-map)
 (define-prefix-command 'aic-git-map)
 (global-set-key (kbd "C-c g") 'aic-git-map)
 
@@ -219,6 +217,8 @@
 (global-set-key (kbd "C-c p k") #'project-kill-buffers)
 (global-set-key (kbd "C-c p t") #'aic-project-test)
 (global-set-key (kbd "C-c p d") #'aic-project-difftastic)
+(global-set-key (kbd "C-c p D") #'aic-project-difftastic-base)
+(global-set-key (kbd "C-c p M") #'aic-project-run-make-target)
 
 (use-package magit
   :ensure t
@@ -491,7 +491,6 @@
   (which-key-mode)
   (which-key-add-key-based-replacements
     "C-c p" "project"
-    "C-c j" "java"
     "C-c g" "git"
     "C-c x" "agent"))
 
@@ -570,9 +569,45 @@
     (when (file-exists-p path)
       path)))
 
+(defun aic-project-make-targets ()
+  "Return documented Makefile targets as (TARGET . DESCRIPTION) pairs."
+  (when-let ((makefile (aic-file-in-project "Makefile")))
+    (with-temp-buffer
+      (insert-file-contents makefile)
+      (let (targets)
+        (goto-char (point-min))
+        (while (re-search-forward
+                "^\\([[:alnum:]_.-]+\\):.*##[[:space:]]*\\(.+\\)$" nil t)
+          (push (cons (match-string-no-properties 1)
+                      (string-trim (match-string-no-properties 2)))
+                targets))
+        (nreverse targets)))))
+
+(defun aic-project-has-make-target-p (target)
+  "Return non-nil when TARGET is documented by the project Makefile."
+  (assoc target (aic-project-make-targets)))
+
+(defvar aic-compilation-scope nil)
+
+(defun aic-compilation-buffer-name (_mode)
+  "Return a project and scope specific compilation buffer name."
+  (format "*%s:%s*"
+          (file-name-nondirectory
+           (directory-file-name (expand-file-name (aic-project-root))))
+          (or aic-compilation-scope "compile")))
+
+(defun aic-compile (command scope &optional directory)
+  "Run COMMAND in a scoped compilation buffer.
+SCOPE identifies the result buffer.  DIRECTORY defaults to the project root."
+  (let ((default-directory (or directory (aic-project-root)))
+        (aic-compilation-scope scope)
+        (compilation-buffer-name-function #'aic-compilation-buffer-name))
+    (compile command)))
+
 (defun aic-project-test-command ()
   "Return the conventional test command for the current project."
   (cond
+   ((aic-project-has-make-target-p "test") "make test")
    ((aic-file-in-project "mvnw") "./mvnw test")
    ((aic-file-in-project "gradlew") "./gradlew test")
    ((aic-file-in-project "pom.xml") "mvn test")
@@ -586,21 +621,92 @@
 (defun aic-project-test ()
   "Run the conventional test command for the current project."
   (interactive)
-  (let ((default-directory (aic-project-root)))
-    (compile (aic-project-test-command))))
+  (aic-compile (aic-project-test-command) "test"))
 
-(defun aic-difftastic-buffer-name (_mode)
-  "Return the buffer name used for a Difftastic review."
-  "*difftastic review*")
+(defun aic-project-run-make-target ()
+  "Select and run a documented project Makefile target."
+  (interactive)
+  (let ((targets (aic-project-make-targets)))
+    (unless targets
+      (user-error "Project Makefile has no targets documented with ##"))
+    (let* ((candidates
+            (mapcar (lambda (target)
+                      (cons (format "%-24s %s" (car target) (cdr target))
+                            (car target)))
+                    targets))
+           (selection (completing-read "Make target: " candidates nil t))
+           (target (cdr (assoc selection candidates))))
+      (aic-compile (concat "make " (shell-quote-argument target))
+                   (concat "make-" target)))))
+
+(defun aic-require-difftastic ()
+  "Require the Difftastic executable."
+  (unless (executable-find "difft")
+    (user-error "difft is not available in PATH")))
 
 (defun aic-project-difftastic ()
   "Review tracked project changes against HEAD with Difftastic."
   (interactive)
-  (unless (executable-find "difft")
-    (user-error "difft is not available in PATH"))
-  (let ((default-directory (aic-project-root))
-        (compilation-buffer-name-function #'aic-difftastic-buffer-name))
-    (compile "git -c diff.external=difft diff --ext-diff HEAD")))
+  (aic-require-difftastic)
+  (aic-compile "git -c diff.external=difft diff --ext-diff HEAD"
+               "review-head"))
+
+(defun aic-git-output (&rest arguments)
+  "Return trimmed Git output for ARGUMENTS, or nil when Git fails."
+  (with-temp-buffer
+    (let ((status (apply #'process-file "git" nil t nil arguments)))
+      (when (zerop status)
+        (let ((output (string-trim (buffer-string))))
+          (unless (string-empty-p output)
+            output))))))
+
+(defun aic-git-review-upstream ()
+  "Return an upstream suitable as a review base, if one exists."
+  (let ((current (aic-git-output "branch" "--show-current"))
+        (upstream (aic-git-output "rev-parse" "--abbrev-ref"
+                                  "--symbolic-full-name" "@{upstream}")))
+    (when (and upstream current
+               (not (equal upstream current))
+               (not (string-suffix-p (concat "/" current) upstream)))
+      upstream)))
+
+(defun aic-git-review-base ()
+  "Return the most relevant base branch for reviewing the current branch."
+  (let* ((current (aic-git-output "branch" "--show-current"))
+         (dev-loop-target
+          (and current
+               (aic-git-output "config" "--get"
+                               (format "branch.%s.dev-loop-target" current))))
+         (automatic
+          (or (and dev-loop-target
+                   (not (equal dev-loop-target current))
+                   dev-loop-target)
+              (aic-git-review-upstream)
+              (aic-git-output "symbolic-ref" "--short"
+                              "refs/remotes/origin/HEAD"))))
+    (or automatic
+        (let* ((branches-output
+                (aic-git-output "for-each-ref" "--format=%(refname:short)"
+                                "refs/heads"))
+               (branches (and branches-output
+                              (delete current (split-string branches-output "\n" t)))))
+          (unless branches
+            (user-error "Repository has no alternative local branch to review against"))
+          (completing-read "Review base: " branches nil t)))))
+
+(defun aic-project-difftastic-base ()
+  "Review the current branch and working tree against their merge base."
+  (interactive)
+  (aic-require-difftastic)
+  (let* ((default-directory (aic-project-root))
+         (base (aic-git-review-base))
+         (merge-base (aic-git-output "merge-base" "HEAD" base)))
+    (unless merge-base
+      (user-error "Cannot find a merge base with %s" base))
+    (aic-compile
+     (format "git -c diff.external=difft diff --ext-diff %s"
+             (shell-quote-argument merge-base))
+     (concat "review-" base))))
 
 (defun aic-copy-to-clipboard (text)
   "Copy TEXT to the kill ring and graphical clipboard."
@@ -753,148 +859,6 @@
 (define-key aic-codex-map (kbd "j") #'aic-dev-task-job)
 (define-key aic-codex-map (kbd "s") #'aic-dev-task-submit)
 
-(defun aic-java-build-system ()
-  "Return the Java build system for the current project."
-  (cond
-   ((or (aic-file-in-project "mvnw")
-        (aic-file-in-project "pom.xml")
-        (aic-file-in-project ".mvn")) 'maven)
-   ((or (aic-file-in-project "gradlew")
-        (aic-file-in-project "build.gradle")
-        (aic-file-in-project "build.gradle.kts")
-        (aic-file-in-project "settings.gradle")
-        (aic-file-in-project "settings.gradle.kts")) 'gradle)
-   (t (user-error "Current project has no Maven or Gradle build"))))
-
-(defun aic-java-module-marker-p (directory)
-  "Return non-nil when DIRECTORY is a module for the current build system."
-  (pcase (aic-java-build-system)
-    ('maven (file-exists-p (expand-file-name "pom.xml" directory)))
-    ('gradle (or (file-exists-p (expand-file-name "build.gradle" directory))
-                 (file-exists-p (expand-file-name "build.gradle.kts" directory))))))
-
-(defun aic-java-module-root ()
-  "Return the nearest Java module root inside the current project."
-  (let* ((root (file-name-as-directory
-                (file-truename (aic-project-root))))
-         (start (file-name-directory
-                 (or buffer-file-name (expand-file-name default-directory))))
-         (module (locate-dominating-file start #'aic-java-module-marker-p)))
-    (if (and module
-             (or (equal (file-truename module) root)
-                 (file-in-directory-p module root)))
-        module
-      root)))
-
-(defun aic-java-build-tool-command (maven-command gradle-command)
-  "Return a project-local Java build command.
-MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
-  (let ((default-directory (aic-project-root)))
-    (cond
-     ((aic-file-in-project "mvnw")
-      (concat (shell-quote-argument (aic-file-in-project "mvnw"))
-              " " maven-command))
-     ((aic-file-in-project "gradlew")
-      (concat (shell-quote-argument (aic-file-in-project "gradlew"))
-              " " gradle-command))
-     ((or (aic-file-in-project "pom.xml")
-          (aic-file-in-project ".mvn")) (concat "mvn " maven-command))
-     ((or (aic-file-in-project "build.gradle")
-          (aic-file-in-project "build.gradle.kts")
-          (aic-file-in-project "settings.gradle")
-          (aic-file-in-project "settings.gradle.kts")) (concat "gradle " gradle-command))
-     (t (concat "mvn " maven-command)))))
-
-(defun aic-spring-boot-run ()
-  "Run the current Spring Boot application."
-  (interactive)
-  (let ((default-directory (aic-project-root)))
-    (compile (aic-java-build-tool-command "spring-boot:run" "bootRun"))))
-
-(defun aic-java-test ()
-  "Run tests for the current Java project."
-  (interactive)
-  (let ((default-directory (aic-project-root)))
-    (compile (aic-java-build-tool-command "test" "test"))))
-
-(defun aic-java-test-module ()
-  "Run tests from the nearest Maven or Gradle module directory."
-  (interactive)
-  (let ((default-directory (aic-java-module-root)))
-    (compile (aic-java-build-tool-command "test" "test"))))
-
-(defun aic-java-qualified-class-name ()
-  "Return the package-qualified class name for the current Java file."
-  (unless (and buffer-file-name
-               (string-equal (file-name-extension buffer-file-name) "java"))
-    (user-error "Current buffer does not visit a Java file"))
-  (let ((class-name (file-name-base buffer-file-name))
-        package-name)
-    (save-excursion
-      (goto-char (point-min))
-      (when (re-search-forward
-             "^[[:space:]]*package[[:space:]]+\\([[:alnum:]_.]+\\)[[:space:]]*;"
-             nil t)
-        (setq package-name (match-string-no-properties 1))))
-    (if package-name
-        (concat package-name "." class-name)
-      class-name)))
-
-(defun aic-java-treesit-method-at-point ()
-  "Return the enclosing Java method name using tree-sitter."
-  (when (and (derived-mode-p 'java-ts-mode)
-             (fboundp 'treesit-node-at))
-    (let ((node (treesit-node-at (point))))
-      (while (and node
-                  (not (member (treesit-node-type node)
-                               '("method_declaration"))))
-        (setq node (treesit-node-parent node)))
-      (when-let ((name-node
-                  (and node (treesit-node-child-by-field-name node "name"))))
-        (treesit-node-text name-node t)))))
-
-(defun aic-java-method-at-point ()
-  "Return the enclosing Java method name."
-  (if (derived-mode-p 'java-ts-mode)
-      (aic-java-treesit-method-at-point)
-    (require 'which-func)
-    (when-let ((name (which-function)))
-      (car (last (split-string name "\\." t))))))
-
-(defun aic-java-focused-test-command (&optional method)
-  "Return a class test command, narrowed to METHOD when non-nil."
-  (let* ((class-name (aic-java-qualified-class-name))
-         (selector (if method
-                       (pcase (aic-java-build-system)
-                         ('maven (concat class-name "#" method))
-                         ('gradle (concat class-name "." method)))
-                     class-name))
-         (quoted-selector (shell-quote-argument selector)))
-    (aic-java-build-tool-command
-     (format "-Dtest=%s test" quoted-selector)
-     (format "test --tests %s" quoted-selector))))
-
-(defun aic-java-test-class ()
-  "Run the current Java test class."
-  (interactive)
-  (let ((default-directory (aic-java-module-root)))
-    (compile (aic-java-focused-test-command))))
-
-(defun aic-java-test-method ()
-  "Run the Java test method containing point."
-  (interactive)
-  (let ((method (aic-java-method-at-point)))
-    (unless method
-      (user-error "Point is not inside a Java method"))
-    (let ((default-directory (aic-java-module-root)))
-      (compile (aic-java-focused-test-command method)))))
-
-(defun aic-java-package ()
-  "Build the current Java project package."
-  (interactive)
-  (let ((default-directory (aic-project-root)))
-    (compile (aic-java-build-tool-command "package" "build"))))
-
 (defun aic-eglot-mode-setup (&optional format-on-save)
   "Start Eglot and optionally enable FORMAT-ON-SAVE in the current buffer."
   (require 'eglot)
@@ -906,65 +870,6 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
 (defun aic-eglot-format-mode-setup ()
   "Start Eglot and enable Eglot formatting on save."
   (aic-eglot-mode-setup t))
-
-(defun aic-java-eglot-configuration ()
-  "Return JDT LS runtime configuration for the managed JDKs."
-  `(:java
-    (:configuration
-     (:runtimes
-      ,(vector
-        `(:name "JavaSE-17"
-          :path ,(expand-file-name "~/.local/share/jdks/17"))
-        `(:name "JavaSE-25"
-          :path ,(expand-file-name "~/.local/share/jdks/25")
-          :default t))))))
-
-(defun aic-jdtls-workspace-directory (root)
-  "Return a stable JDT LS workspace directory for project ROOT."
-  (let* ((canonical-root (directory-file-name (file-truename root)))
-         (project-name (file-name-nondirectory canonical-root))
-         (project-hash (substring (secure-hash 'sha256 canonical-root) 0 12))
-         (cache-root (expand-file-name
-                      "jdtls"
-                      (or (getenv "XDG_CACHE_HOME") "~/.cache"))))
-    (expand-file-name (format "%s-%s" project-name project-hash) cache-root)))
-
-(defun aic-jdtls-contact (_interactive project)
-  "Return the JDT LS contact for PROJECT with an isolated workspace."
-  (let ((workspace
-         (aic-jdtls-workspace-directory
-          (if project (project-root project) (aic-project-root)))))
-    (make-directory workspace t)
-    (list "jdtls" "-data" workspace)))
-
-(defun aic-java-mode-setup ()
-  "Set sensible defaults for Java and Spring Boot development."
-  (setq-local c-basic-offset 4)
-  (setq-local indent-tabs-mode nil)
-  (setq-local tab-width 4)
-  (setq-local eglot-ignored-server-capabilities
-              (append (and (boundp 'eglot-ignored-server-capabilities)
-                           eglot-ignored-server-capabilities)
-                      '(:documentOnTypeFormattingProvider)))
-  (setq-local eglot-workspace-configuration
-              (aic-java-eglot-configuration))
-  (setq-local compile-command (aic-java-build-tool-command "test" "test"))
-  (local-set-key (kbd "C-c C-r") #'aic-spring-boot-run)
-  (local-set-key (kbd "C-c C-t") #'aic-java-test)
-  (local-set-key (kbd "C-c C-p") #'aic-java-package)
-  (aic-eglot-mode-setup)
-  (when (executable-find "google-java-format")
-    (add-hook 'before-save-hook #'aic-google-java-format-buffer nil t)))
-
-(defun aic-google-java-format-buffer ()
-  "Format the current Java buffer with the `google-java-format' binary."
-  (interactive)
-  (when (executable-find "google-java-format")
-    (shell-command-on-region (point-min) (point-max)
-                             "google-java-format -"
-                             (current-buffer) t
-                             "*google-java-format errors*"
-                             t)))
 
 (use-package gradle-mode
   :ensure t
@@ -1019,8 +924,8 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
 
 (use-package eglot
   :ensure nil
-  :hook ((java-mode . aic-java-mode-setup)
-         (java-ts-mode . aic-java-mode-setup)
+  :hook ((java-mode . aic-eglot-mode-setup)
+         (java-ts-mode . aic-eglot-mode-setup)
          (c-mode . aic-c-mode-setup)
          (c-ts-mode . aic-c-mode-setup)
          (c++-mode . aic-c-mode-setup)
@@ -1032,7 +937,7 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
          (rust-ts-mode . aic-eglot-format-mode-setup))
   :config
   (add-to-list 'eglot-server-programs
-               '((java-mode java-ts-mode) . aic-jdtls-contact))
+               '((java-mode java-ts-mode) . ("jdtls")))
   (add-to-list 'eglot-server-programs
                '((c-mode c-ts-mode c++-mode c++-ts-mode) . ("clangd")))
   (add-to-list 'eglot-server-programs
@@ -1043,20 +948,6 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
                '(nix-mode . ("nixd")))
   (add-to-list 'eglot-server-programs
                '((rust-mode rust-ts-mode) . ("rust-analyzer"))))
-
-(define-key aic-java-map (kbd "d") #'xref-find-definitions)
-(define-key aic-java-map (kbd "R") #'xref-find-references)
-(define-key aic-java-map (kbd "i") #'eglot-find-implementation)
-(define-key aic-java-map (kbd "s") #'xref-find-apropos)
-(define-key aic-java-map (kbd "o") #'consult-imenu)
-(define-key aic-java-map (kbd "r") #'eglot-rename)
-(define-key aic-java-map (kbd "a") #'eglot-code-actions)
-(define-key aic-java-map (kbd "f") #'eglot-format)
-(define-key aic-java-map (kbd "e") #'consult-flymake)
-(define-key aic-java-map (kbd "t") #'aic-java-test-method)
-(define-key aic-java-map (kbd "c") #'aic-java-test-class)
-(define-key aic-java-map (kbd "m") #'aic-java-test-module)
-(define-key aic-java-map (kbd "T") #'aic-java-test)
 
 (use-package clang-format
   :ensure t)

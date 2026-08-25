@@ -47,31 +47,18 @@ Project commands use the =C-c p= prefix:
 - =C-c p f=: find a project file.
 - =C-c p b=: switch project buffer.
 - =C-c p r=: search the project with ripgrep.
-- =C-c p t=: run the conventional project test command.
+- =C-c p t=: run a documented =make test= target when present, otherwise use
+  the conventional project test command.
+- =C-c p M=: choose and run a Make target carrying a =##= description.
 - =C-c p d=: review tracked changes against =HEAD= with Difftastic.
+- =C-c p D=: review the branch and working tree against their resolved base
+  with Difftastic.
 - =C-c p k=: kill project buffers.
 
-Code intelligence uses Eglot and Flymake:
-
-- =C-c j d=: find a symbol definition.
-- =C-c j R=: find symbol references.
-- =C-c j i=: find a symbol implementation.
-- =C-c j s=: find a workspace symbol.
-- =C-c j o=: find a class or method in the current buffer.
-- =C-c j r=: rename a symbol.
-- =C-c j a=: apply a code action.
-- =C-c j f=: format through Eglot.
-- =C-c j e=: inspect buffer diagnostics with Consult; use a prefix argument
-  for all open buffers in the project.
-- =C-c j t=: run the Java test method at point.
-- =C-c j c=: run the current Java test class.
-- =C-c j m=: run tests from the nearest Maven or Gradle module.
-- =C-c j T=: run the full Java project test suite.
-
 Java buffers use =java-ts-mode= when the Home Manager managed tree-sitter
-grammar is available. JDT LS uses the managed Java 17 and Java 25 runtimes and
-keeps a separate index under =~/.cache/jdtls= for every absolute project or
-worktree path.
+grammar is available. Eglot starts JDT LS directly; use standard Xref and Eglot
+commands for navigation and refactoring, and the project commands above for
+tests and builds.
 
 Git Gutter marks changed lines in file buffers. Use =C-c g p= and =C-c g n= to
 visit the previous or next hunk, and =C-c g h= to preview the current hunk.
@@ -117,15 +104,16 @@ Do not hard-code broad permissions into the project launcher.
 
 =C-c p t= selects the first matching command:
 
-| Marker                 | Command          |
-|------------------------+------------------|
-| =mvnw=                 | =./mvnw test=    |
-| =gradlew=              | =./gradlew test= |
-| =pom.xml=              | =mvn test=       |
-| =build.gradle[.kts]=   | =gradle test=    |
-| =Cargo.toml=           | =cargo test=      |
-| =build.zig=            | =zig build test= |
-| =Makefile=             | =make test=       |
+| Marker                         | Command          |
+|--------------------------------+------------------|
+| documented Make =test= target | =make test=      |
+| =mvnw=                         | =./mvnw test=    |
+| =gradlew=                      | =./gradlew test= |
+| =pom.xml=                      | =mvn test=       |
+| =build.gradle[.kts]=           | =gradle test=    |
+| =Cargo.toml=                   | =cargo test=      |
+| =build.zig=                    | =zig build test= |
+| other =Makefile=               | =make test=       |
 
 When no marker matches, Emacs uses the buffer's existing =compile-command=.
 
