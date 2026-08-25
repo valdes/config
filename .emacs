@@ -145,6 +145,10 @@
 ;; Completion and project navigation
 (define-prefix-command 'aic-project-map)
 (global-set-key (kbd "C-c p") 'aic-project-map)
+(define-prefix-command 'aic-java-map)
+(global-set-key (kbd "C-c j") 'aic-java-map)
+(define-prefix-command 'aic-git-map)
+(global-set-key (kbd "C-c g") 'aic-git-map)
 
 (use-package savehist
   :ensure nil
@@ -167,11 +171,13 @@
 
 (use-package consult
   :ensure t
+  :init
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
   :bind (([f10] . consult-buffer)
          ([S-f10] . consult-recent-file)
          ("C-c p b" . consult-project-buffer)
-         ("C-c p r" . consult-ripgrep)
-         ("C-c j e" . consult-flymake)))
+         ("C-c p r" . consult-ripgrep)))
 
 (use-package embark
   :ensure t
@@ -212,10 +218,12 @@
 (global-set-key (kbd "C-c p p") #'project-switch-project)
 (global-set-key (kbd "C-c p k") #'project-kill-buffers)
 (global-set-key (kbd "C-c p t") #'aic-project-test)
+(global-set-key (kbd "C-c p d") #'aic-project-difftastic)
 
-;disable temporary gitgutter (global-git-gutter-mode +1)
 (use-package magit
   :ensure t
+  :custom
+  (magit-diff-refine-hunk 'all)
   :bind ("C-x g" . magit-status))
 
 (with-eval-after-load 'compile
@@ -572,6 +580,19 @@
   (let ((default-directory (aic-project-root)))
     (compile (aic-project-test-command))))
 
+(defun aic-difftastic-buffer-name (_mode)
+  "Return the buffer name used for a Difftastic review."
+  "*difftastic review*")
+
+(defun aic-project-difftastic ()
+  "Review tracked project changes against HEAD with Difftastic."
+  (interactive)
+  (unless (executable-find "difft")
+    (user-error "difft is not available in PATH"))
+  (let ((default-directory (aic-project-root))
+        (compilation-buffer-name-function #'aic-difftastic-buffer-name))
+    (compile "git -c diff.external=difft diff --ext-diff HEAD")))
+
 (defun aic-copy-to-clipboard (text)
   "Copy TEXT to the kill ring and graphical clipboard."
   (kill-new text)
@@ -873,10 +894,15 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
   (add-to-list 'eglot-server-programs
                '((rust-mode rust-ts-mode) . ("rust-analyzer"))))
 
-(global-set-key (kbd "C-c j r") #'eglot-rename)
-(global-set-key (kbd "C-c j a") #'eglot-code-actions)
-(global-set-key (kbd "C-c j f") #'eglot-format)
-(global-set-key (kbd "C-c j e") #'flymake-show-buffer-diagnostics)
+(define-key aic-java-map (kbd "d") #'xref-find-definitions)
+(define-key aic-java-map (kbd "R") #'xref-find-references)
+(define-key aic-java-map (kbd "i") #'eglot-find-implementation)
+(define-key aic-java-map (kbd "s") #'xref-find-apropos)
+(define-key aic-java-map (kbd "o") #'consult-imenu)
+(define-key aic-java-map (kbd "r") #'eglot-rename)
+(define-key aic-java-map (kbd "a") #'eglot-code-actions)
+(define-key aic-java-map (kbd "f") #'eglot-format)
+(define-key aic-java-map (kbd "e") #'consult-flymake)
 
 (use-package clang-format
   :ensure t)
@@ -884,7 +910,14 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
 (use-package docker-compose-mode :ensure t)
 (use-package dockerfile-mode :ensure t)
 (use-package nix-mode :ensure t)
-(use-package git-gutter :ensure t)
+(use-package git-gutter
+  :ensure t
+  :init
+  (global-git-gutter-mode 1)
+  :bind (:map aic-git-map
+              ("p" . git-gutter:previous-hunk)
+              ("n" . git-gutter:next-hunk)
+              ("h" . git-gutter:popup-hunk)))
 ;; Zenburn theme
 (use-package zenburn-theme
   :ensure t

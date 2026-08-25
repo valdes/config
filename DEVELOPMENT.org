@@ -48,14 +48,25 @@ Project commands use the =C-c p= prefix:
 - =C-c p b=: switch project buffer.
 - =C-c p r=: search the project with ripgrep.
 - =C-c p t=: run the conventional project test command.
+- =C-c p d=: review tracked changes against =HEAD= with Difftastic.
 - =C-c p k=: kill project buffers.
 
 Code intelligence uses Eglot and Flymake:
 
+- =C-c j d=: find a symbol definition.
+- =C-c j R=: find symbol references.
+- =C-c j i=: find a symbol implementation.
+- =C-c j s=: find a workspace symbol.
+- =C-c j o=: find a class or method in the current buffer.
 - =C-c j r=: rename a symbol.
 - =C-c j a=: apply a code action.
 - =C-c j f=: format through Eglot.
-- =C-c j e=: inspect diagnostics with Consult.
+- =C-c j e=: inspect buffer diagnostics with Consult; use a prefix argument
+  for all open buffers in the project.
+
+Git Gutter marks changed lines in file buffers. Use =C-c g p= and =C-c g n= to
+visit the previous or next hunk, and =C-c g h= to preview the current hunk.
+Magit refines changed words within every displayed diff hunk.
 
 Use =F10= for buffers, =Shift+F10= for recent files, =C-.= for contextual
 Embark actions, and =C-x g= for Magit.
