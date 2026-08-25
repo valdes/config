@@ -94,7 +94,11 @@
     httpie # curl
     curlie # curl
     ripgrep # recursively searches directories for a regex pattern
+    ast-grep # structural code search and rewrite
     yq-go # yaml processer https://github.com/mikefarah/yq
+    shellcheck # shell static analysis
+    shfmt # shell formatter
+    watchexec # rerun commands when files change
     gnumake
     emacs
     nerd-fonts.symbols-only # icon glyphs used by doom-modeline/nerd-icons

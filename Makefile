@@ -121,6 +121,7 @@ check:
 	bash -n "$(REPO_ROOT)/bin/toggle-waybar"
 	bash -n "$(REPO_ROOT)/tests/dev-loop-test"
 	bash -n "$(REPO_ROOT)/tests/dev-session-test"
+	shellcheck "$(REPO_ROOT)/bin/dev-session" "$(REPO_ROOT)/bin/dev-loop" "$(REPO_ROOT)/tests/dev-loop-test" "$(REPO_ROOT)/tests/dev-session-test"
 	emacs --batch -Q --eval '(with-temp-buffer (insert-file-contents "$(REPO_ROOT)/.emacs") (emacs-lisp-mode) (check-parens))'
 	"$(REPO_ROOT)/tests/dev-loop-test"
 	"$(REPO_ROOT)/tests/dev-session-test"
