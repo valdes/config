@@ -143,8 +143,6 @@
 (global-auto-revert-mode 1)
 
 ;; Completion and project navigation
-(define-prefix-command 'aic-project-map)
-(global-set-key (kbd "C-c p") 'aic-project-map)
 (define-prefix-command 'aic-git-map)
 (global-set-key (kbd "C-c g") 'aic-git-map)
 
@@ -173,9 +171,7 @@
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
   :bind (([f10] . consult-buffer)
-         ([S-f10] . consult-recent-file)
-         ("C-c p b" . consult-project-buffer)
-         ("C-c p r" . consult-ripgrep)))
+         ([S-f10] . consult-recent-file)))
 
 (use-package embark
   :ensure t
@@ -212,14 +208,6 @@
      (project-dired "Dired")
      (consult-ripgrep "Ripgrep"))))
 
-(global-set-key (kbd "C-c p f") #'project-find-file)
-(global-set-key (kbd "C-c p p") #'project-switch-project)
-(global-set-key (kbd "C-c p k") #'project-kill-buffers)
-(global-set-key (kbd "C-c p t") #'aic-project-test)
-(global-set-key (kbd "C-c p d") #'aic-project-difftastic)
-(global-set-key (kbd "C-c p D") #'aic-project-difftastic-base)
-(global-set-key (kbd "C-c p M") #'aic-project-run-make-target)
-
 (use-package magit
   :ensure t
   :custom
@@ -232,107 +220,10 @@
         compilation-scroll-output 'first-error)
   (add-hook 'compilation-filter-hook #'ansi-color-compilation-filter))
 
-;{{{ Custom functions
-
-;{{{ Reload or edit .emacs on the fly
-;    - key bindings defined below
-;
 (defun aic-reload-dot-emacs ()
-  "Reload user configuration from .emacs"
+  "Reload the current Emacs user configuration."
   (interactive)
-  (load-file "~/.emacs"))
-
-(defun aic-edit-dot-emacs ()
-  "Edit user configuration in .emacs"
-  (interactive)
-  (find-file "~/.emacs"))
-;}}}
-
-;{{{ Timestamp function, for public dotfiles
-;    - date-stamp is more appropriate for txt files
-;
-(defun aic-dotfile-stamp ()
-  "Insert time stamp at point."
-  (interactive)
-  (insert "Updated on: " (format-time-string "%b %e, %H:%M:%S %Z %Y" nil nil)))
-
-(defun aic-txtfile-stamp ()
-  "Insert date at point."
-  (interactive)
-  (insert (format-time-string "%d.%m.%Y %H:%M")))
-;}}}
-
-;{{{ Quick access to coding functions
-;    - I deal with utf8, latin-2 and cp1250
-;
-(defun aic-recode-buffer ()
-  "Define the coding system for a file."
-  (interactive)
-  (call-interactively 'set-buffer-file-coding-system))
-
-(defun aic-encode-buffer ()
-  "Revisit the buffer with another coding system."
-  (interactive)
-  (call-interactively 'revert-buffer-with-coding-system))
-;}}}
-
-;{{{ Kill all buffers except scratch
-;
-(defun aic-nuke-all-buffers ()
-  "Kill all buffers, leaving *scratch* only."
-  (interactive)
-  (mapcar (lambda (x) (kill-buffer x)) (buffer-list))
-  (delete-other-windows))
-;}}}
-
-;{{{ Quick access to Org mode files and agenda
-;    - convenience wrappers around built-in Org commands
-;
-(defun aic-org-index ()
-  "Show the main org file."
-  (interactive)
-  (find-file "~/Dropbox/.org/index.org"))
-
-(defun aic-org-agenda ()
-  "Show the org-mode agenda."
-  (interactive)
-  (call-interactively 'org-agenda-list))
-;}}}
-
-;{{{ Short aliases for interactive use
-;    - keep old convenience names while the implementation stays explicit
-;
-(defalias 'stamp         'aic-dotfile-stamp)
-(defalias 'date-stamp    'aic-txtfile-stamp)
-(defalias 'recode-buffer 'aic-recode-buffer)
-(defalias 'encode-buffer 'aic-encode-buffer)
-(defalias 'nuke          'aic-nuke-all-buffers)
-(defalias 'org           'aic-org-index)
-(defalias 'cr            'comment-region)
-(defalias 'ucr           'uncomment-region)
-(defalias 'eb            'eval-buffer)
-(defalias 'er            'eval-region)
-(defalias 'ee            'eval-expression)
-;}}}
-
-;{{{ Named helpers for key bindings
-;    - use named commands instead of inline lambdas to keep bindings readable
-;
-(defun aic-goto-buffer-start ()
-  "Jump to the beginning of the buffer."
-  (interactive)
-  (goto-char (point-min)))
-
-(defun aic-goto-buffer-end ()
-  "Jump to the end of the buffer."
-  (interactive)
-  (goto-char (point-max)))
-
-(defun aic-kill-emacs-confirm ()
-  "Quit Emacs after confirmation."
-  (interactive)
-  (when (y-or-n-p "Quit? ")
-    (save-buffers-kill-emacs)))
+  (load-file user-init-file))
 
 (defun aic-manual-current-word ()
   "Open the manual entry for the symbol at point."
@@ -342,9 +233,7 @@
 (defun aic-open-org-notes ()
   "Open the default Org notes file."
   (interactive)
-  (find-file "~/Dropbox/.org/notes.org"))
-;}}}
-
+  (find-file org-default-notes-file))
 
 ;{{{ Key bindings
 ;    - with switched Caps_Lock and Control_L keys system wide
@@ -358,9 +247,8 @@
 ;; Change C-x C-b behavior (buffer management)
 (global-set-key "\C-x\C-b" 'electric-buffer-list)
 
-;; Reload or edit .emacs as defined above
-(global-set-key "\C-c\C-r" 'aic-reload-dot-emacs)
-(global-set-key "\C-c\C-e" 'aic-edit-dot-emacs)
+;; Reload the active Emacs configuration.
+(global-set-key (kbd "C-c C-r") #'aic-reload-dot-emacs)
 
 ;; Toggle soft word wrapping
 (global-set-key "\C-cw" 'toggle-truncate-lines)
@@ -383,17 +271,17 @@
 (global-set-key (kbd "<M-down>") 'menu-bar-mode)
 
 ;; Jump to the start/end of the document with C-PgUP/DN
-(global-set-key [C-prior] 'aic-goto-buffer-start)
-(global-set-key [C-next]  'aic-goto-buffer-end)
+(global-set-key [C-prior] #'beginning-of-buffer)
+(global-set-key [C-next]  #'end-of-buffer)
 
-;; Require C-x C-c prompt, no accidental quits
-(global-set-key (kbd "C-x C-c") 'aic-kill-emacs-confirm)
+;; Require a prompt before quitting Emacs.
+(setq confirm-kill-emacs #'y-or-n-p)
 ;}}}
 
 ;{{{ Fn bindings
-(global-set-key  [f1]  'aic-manual-current-word)
-(global-set-key  [f2]  'aic-open-org-notes)
-(global-set-key  [f3]  'aic-org-agenda)           ; Function defined previously
+(global-set-key  [f1]  #'aic-manual-current-word)
+(global-set-key  [f2]  #'aic-open-org-notes)
+(global-set-key  [f3]  #'org-agenda-list)
 (global-set-key  [f4]  'make-remember-frame)
 (global-set-key  [f5]  'org-tree-slide-mode)
 (global-set-key  [f6]  'display-line-numbers-mode)
@@ -490,7 +378,6 @@
   :config
   (which-key-mode)
   (which-key-add-key-based-replacements
-    "C-c p" "project"
     "C-c g" "git"
     "C-c x" "agent"))
 
@@ -563,150 +450,13 @@
         (car (project-roots project)))
       default-directory))
 
-(defun aic-file-in-project (file)
-  "Return FILE under the current project root when it exists."
-  (let ((path (expand-file-name file (aic-project-root))))
-    (when (file-exists-p path)
-      path)))
-
-(defun aic-project-make-targets ()
-  "Return documented Makefile targets as (TARGET . DESCRIPTION) pairs."
-  (when-let ((makefile (aic-file-in-project "Makefile")))
-    (with-temp-buffer
-      (insert-file-contents makefile)
-      (let (targets)
-        (goto-char (point-min))
-        (while (re-search-forward
-                "^\\([[:alnum:]_.-]+\\):.*##[[:space:]]*\\(.+\\)$" nil t)
-          (push (cons (match-string-no-properties 1)
-                      (string-trim (match-string-no-properties 2)))
-                targets))
-        (nreverse targets)))))
-
-(defun aic-project-has-make-target-p (target)
-  "Return non-nil when TARGET is documented by the project Makefile."
-  (assoc target (aic-project-make-targets)))
-
-(defvar aic-compilation-scope nil)
-
-(defun aic-compilation-buffer-name (_mode)
-  "Return a project and scope specific compilation buffer name."
-  (format "*%s:%s*"
-          (file-name-nondirectory
-           (directory-file-name (expand-file-name (aic-project-root))))
-          (or aic-compilation-scope "compile")))
-
-(defun aic-compile (command scope &optional directory)
-  "Run COMMAND in a scoped compilation buffer.
-SCOPE identifies the result buffer.  DIRECTORY defaults to the project root."
-  (let ((default-directory (or directory (aic-project-root)))
-        (aic-compilation-scope scope)
-        (compilation-buffer-name-function #'aic-compilation-buffer-name))
-    (compile command)))
-
-(defun aic-project-test-command ()
-  "Return the conventional test command for the current project."
-  (cond
-   ((aic-project-has-make-target-p "test") "make test")
-   ((aic-file-in-project "mvnw") "./mvnw test")
-   ((aic-file-in-project "gradlew") "./gradlew test")
-   ((aic-file-in-project "pom.xml") "mvn test")
-   ((or (aic-file-in-project "build.gradle")
-        (aic-file-in-project "build.gradle.kts")) "gradle test")
-   ((aic-file-in-project "Cargo.toml") "cargo test")
-   ((aic-file-in-project "build.zig") "zig build test")
-   ((aic-file-in-project "Makefile") "make test")
-   (t compile-command)))
-
-(defun aic-project-test ()
-  "Run the conventional test command for the current project."
-  (interactive)
-  (aic-compile (aic-project-test-command) "test"))
-
-(defun aic-project-run-make-target ()
-  "Select and run a documented project Makefile target."
-  (interactive)
-  (let ((targets (aic-project-make-targets)))
-    (unless targets
-      (user-error "Project Makefile has no targets documented with ##"))
-    (let* ((candidates
-            (mapcar (lambda (target)
-                      (cons (format "%-24s %s" (car target) (cdr target))
-                            (car target)))
-                    targets))
-           (selection (completing-read "Make target: " candidates nil t))
-           (target (cdr (assoc selection candidates))))
-      (aic-compile (concat "make " (shell-quote-argument target))
-                   (concat "make-" target)))))
-
-(defun aic-require-difftastic ()
-  "Require the Difftastic executable."
-  (unless (executable-find "difft")
-    (user-error "difft is not available in PATH")))
-
 (defun aic-project-difftastic ()
   "Review tracked project changes against HEAD with Difftastic."
   (interactive)
-  (aic-require-difftastic)
-  (aic-compile "git -c diff.external=difft diff --ext-diff HEAD"
-               "review-head"))
-
-(defun aic-git-output (&rest arguments)
-  "Return trimmed Git output for ARGUMENTS, or nil when Git fails."
-  (with-temp-buffer
-    (let ((status (apply #'process-file "git" nil t nil arguments)))
-      (when (zerop status)
-        (let ((output (string-trim (buffer-string))))
-          (unless (string-empty-p output)
-            output))))))
-
-(defun aic-git-review-upstream ()
-  "Return an upstream suitable as a review base, if one exists."
-  (let ((current (aic-git-output "branch" "--show-current"))
-        (upstream (aic-git-output "rev-parse" "--abbrev-ref"
-                                  "--symbolic-full-name" "@{upstream}")))
-    (when (and upstream current
-               (not (equal upstream current))
-               (not (string-suffix-p (concat "/" current) upstream)))
-      upstream)))
-
-(defun aic-git-review-base ()
-  "Return the most relevant base branch for reviewing the current branch."
-  (let* ((current (aic-git-output "branch" "--show-current"))
-         (dev-loop-target
-          (and current
-               (aic-git-output "config" "--get"
-                               (format "branch.%s.dev-loop-target" current))))
-         (automatic
-          (or (and dev-loop-target
-                   (not (equal dev-loop-target current))
-                   dev-loop-target)
-              (aic-git-review-upstream)
-              (aic-git-output "symbolic-ref" "--short"
-                              "refs/remotes/origin/HEAD"))))
-    (or automatic
-        (let* ((branches-output
-                (aic-git-output "for-each-ref" "--format=%(refname:short)"
-                                "refs/heads"))
-               (branches (and branches-output
-                              (delete current (split-string branches-output "\n" t)))))
-          (unless branches
-            (user-error "Repository has no alternative local branch to review against"))
-          (completing-read "Review base: " branches nil t)))))
-
-(defun aic-project-difftastic-base ()
-  "Review the current branch and working tree against their merge base."
-  (interactive)
-  (aic-require-difftastic)
-  (let* ((default-directory (aic-project-root))
-         (base (aic-git-review-base))
-         (merge-base (aic-git-output "merge-base" "HEAD" base)))
-    (unless merge-base
-      (user-error "Cannot find a merge base with %s" base))
-    (aic-compile
-     (format "git -c diff.external=difft diff --ext-diff %s"
-             (shell-quote-argument merge-base))
-     (concat "review-" base))))
+  (unless (executable-find "difft")
+    (user-error "difft is not available in PATH"))
+  (let ((default-directory (aic-project-root)))
+    (compile "git -c diff.external=difft diff --ext-diff HEAD")))
 
 (defun aic-copy-to-clipboard (text)
   "Copy TEXT to the kill ring and graphical clipboard."
@@ -859,17 +609,10 @@ SCOPE identifies the result buffer.  DIRECTORY defaults to the project root."
 (define-key aic-codex-map (kbd "j") #'aic-dev-task-job)
 (define-key aic-codex-map (kbd "s") #'aic-dev-task-submit)
 
-(defun aic-eglot-mode-setup (&optional format-on-save)
-  "Start Eglot and optionally enable FORMAT-ON-SAVE in the current buffer."
-  (require 'eglot)
-  (eglot-ensure)
-  (remove-hook 'before-save-hook #'eglot-format-buffer t)
-  (when format-on-save
-    (add-hook 'before-save-hook #'eglot-format-buffer nil t)))
-
 (defun aic-eglot-format-mode-setup ()
-  "Start Eglot and enable Eglot formatting on save."
-  (aic-eglot-mode-setup t))
+  "Start Eglot and format the current buffer on save."
+  (eglot-ensure)
+  (add-hook 'before-save-hook #'eglot-format-buffer nil t))
 
 (use-package gradle-mode
   :ensure t
@@ -897,7 +640,7 @@ SCOPE identifies the result buffer.  DIRECTORY defaults to the project root."
   (setq-local tab-width 4)
   (unless (local-variable-p 'compile-command)
     (setq-local compile-command "make -k "))
-  (aic-eglot-mode-setup t))
+  (aic-eglot-format-mode-setup))
 
 ;; Zig development
 (defun aic-zig-mode-setup ()
@@ -913,7 +656,7 @@ SCOPE identifies the result buffer.  DIRECTORY defaults to the project root."
                               (shell-quote-argument
                                (file-name-nondirectory buffer-file-name)))
                     "zig build"))))
-  (aic-eglot-mode-setup t))
+  (aic-eglot-format-mode-setup))
 
 (use-package zig-mode
   :ensure t)
@@ -924,8 +667,8 @@ SCOPE identifies the result buffer.  DIRECTORY defaults to the project root."
 
 (use-package eglot
   :ensure nil
-  :hook ((java-mode . aic-eglot-mode-setup)
-         (java-ts-mode . aic-eglot-mode-setup)
+  :hook ((java-mode . eglot-ensure)
+         (java-ts-mode . eglot-ensure)
          (c-mode . aic-c-mode-setup)
          (c-ts-mode . aic-c-mode-setup)
          (c++-mode . aic-c-mode-setup)
@@ -960,6 +703,7 @@ SCOPE identifies the result buffer.  DIRECTORY defaults to the project root."
   :init
   (global-git-gutter-mode 1)
   :bind (:map aic-git-map
+              ("d" . aic-project-difftastic)
               ("p" . git-gutter:previous-hunk)
               ("n" . git-gutter:next-hunk)
               ("h" . git-gutter:popup-hunk)))

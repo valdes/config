@@ -41,24 +41,20 @@ With the =C-x= tmux prefix, use =C-x a= for the agent and =C-x s= for the shell.
 
 ** Work in Emacs
 
-Project commands use the =C-c p= prefix:
+Project commands use Emacs's built-in =C-x p= prefix:
 
-- =C-c p p=: switch project.
-- =C-c p f=: find a project file.
-- =C-c p b=: switch project buffer.
-- =C-c p r=: search the project with ripgrep.
-- =C-c p t=: run a documented =make test= target when present, otherwise use
-  the conventional project test command.
-- =C-c p M=: choose and run a Make target carrying a =##= description.
-- =C-c p d=: review tracked changes against =HEAD= with Difftastic.
-- =C-c p D=: review the branch and working tree against their resolved base
-  with Difftastic.
-- =C-c p k=: kill project buffers.
+- =C-x p p=: switch project.
+- =C-x p f=: find a project file.
+- =C-x p b=: switch project buffer.
+- =C-x p g=: search the project.
+- =C-x p c=: compile from the project root.
+- =C-x p k=: kill project buffers.
+
+Use =C-c g d= to review tracked changes against =HEAD= with Difftastic.
 
 Java buffers use =java-ts-mode= when the Home Manager managed tree-sitter
 grammar is available. Eglot starts JDT LS directly; use standard Xref and Eglot
-commands for navigation and refactoring, and the project commands above for
-tests and builds.
+commands for navigation and refactoring, and =C-x p c= for tests and builds.
 
 Git Gutter marks changed lines in file buffers. Use =C-c g p= and =C-c g n= to
 visit the previous or next hunk, and =C-c g h= to preview the current hunk.
@@ -99,23 +95,6 @@ task-specific constraints, and observable completion checks.
 
 Choose model and permissions inside Codex with =/model= and =/permissions=.
 Do not hard-code broad permissions into the project launcher.
-
-** Project test detection
-
-=C-c p t= selects the first matching command:
-
-| Marker                         | Command          |
-|--------------------------------+------------------|
-| documented Make =test= target | =make test=      |
-| =mvnw=                         | =./mvnw test=    |
-| =gradlew=                      | =./gradlew test= |
-| =pom.xml=                      | =mvn test=       |
-| =build.gradle[.kts]=           | =gradle test=    |
-| =Cargo.toml=                   | =cargo test=      |
-| =build.zig=                    | =zig build test= |
-| other =Makefile=               | =make test=       |
-
-When no marker matches, Emacs uses the buffer's existing =compile-command=.
 
 ** Maintain this configuration
 
