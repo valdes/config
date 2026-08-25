@@ -137,10 +137,12 @@
 ;; Start the server for emacsclient.
 (server-mode 1)
 (recentf-mode 1)
+(save-place-mode 1)
 (repeat-mode 1)
 (winner-mode 1)
 (electric-pair-mode 1)
 (global-auto-revert-mode 1)
+(global-completion-preview-mode 1)
 
 ;; Completion and project navigation
 (define-prefix-command 'aic-git-map)
