@@ -63,6 +63,15 @@ Code intelligence uses Eglot and Flymake:
 - =C-c j f=: format through Eglot.
 - =C-c j e=: inspect buffer diagnostics with Consult; use a prefix argument
   for all open buffers in the project.
+- =C-c j t=: run the Java test method at point.
+- =C-c j c=: run the current Java test class.
+- =C-c j m=: run tests from the nearest Maven or Gradle module.
+- =C-c j T=: run the full Java project test suite.
+
+Java buffers use =java-ts-mode= when the Home Manager managed tree-sitter
+grammar is available. JDT LS uses the managed Java 17 and Java 25 runtimes and
+keeps a separate index under =~/.cache/jdtls= for every absolute project or
+worktree path.
 
 Git Gutter marks changed lines in file buffers. Use =C-c g p= and =C-c g n= to
 visit the previous or next hunk, and =C-c g h= to preview the current hunk.

@@ -491,6 +491,8 @@
   (which-key-mode)
   (which-key-add-key-based-replacements
     "C-c p" "project"
+    "C-c j" "java"
+    "C-c g" "git"
     "C-c x" "agent"))
 
 
@@ -549,6 +551,13 @@
   :config (yas-global-mode))
 
 ;; Java / Spring Boot development
+(when (require 'treesit nil t)
+  (add-to-list 'treesit-extra-load-path
+               (expand-file-name "~/.emacs.d/tree-sitter"))
+  (when (and (treesit-available-p)
+             (treesit-language-available-p 'java))
+    (add-to-list 'major-mode-remap-alist '(java-mode . java-ts-mode))))
+
 (defun aic-project-root ()
   "Return the current project root or `default-directory'."
   (or (when-let ((project (project-current nil)))
@@ -744,13 +753,50 @@
 (define-key aic-codex-map (kbd "j") #'aic-dev-task-job)
 (define-key aic-codex-map (kbd "s") #'aic-dev-task-submit)
 
+(defun aic-java-build-system ()
+  "Return the Java build system for the current project."
+  (cond
+   ((or (aic-file-in-project "mvnw")
+        (aic-file-in-project "pom.xml")
+        (aic-file-in-project ".mvn")) 'maven)
+   ((or (aic-file-in-project "gradlew")
+        (aic-file-in-project "build.gradle")
+        (aic-file-in-project "build.gradle.kts")
+        (aic-file-in-project "settings.gradle")
+        (aic-file-in-project "settings.gradle.kts")) 'gradle)
+   (t (user-error "Current project has no Maven or Gradle build"))))
+
+(defun aic-java-module-marker-p (directory)
+  "Return non-nil when DIRECTORY is a module for the current build system."
+  (pcase (aic-java-build-system)
+    ('maven (file-exists-p (expand-file-name "pom.xml" directory)))
+    ('gradle (or (file-exists-p (expand-file-name "build.gradle" directory))
+                 (file-exists-p (expand-file-name "build.gradle.kts" directory))))))
+
+(defun aic-java-module-root ()
+  "Return the nearest Java module root inside the current project."
+  (let* ((root (file-name-as-directory
+                (file-truename (aic-project-root))))
+         (start (file-name-directory
+                 (or buffer-file-name (expand-file-name default-directory))))
+         (module (locate-dominating-file start #'aic-java-module-marker-p)))
+    (if (and module
+             (or (equal (file-truename module) root)
+                 (file-in-directory-p module root)))
+        module
+      root)))
+
 (defun aic-java-build-tool-command (maven-command gradle-command)
   "Return a project-local Java build command.
 MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
   (let ((default-directory (aic-project-root)))
     (cond
-     ((aic-file-in-project "mvnw") (concat "./mvnw " maven-command))
-     ((aic-file-in-project "gradlew") (concat "./gradlew " gradle-command))
+     ((aic-file-in-project "mvnw")
+      (concat (shell-quote-argument (aic-file-in-project "mvnw"))
+              " " maven-command))
+     ((aic-file-in-project "gradlew")
+      (concat (shell-quote-argument (aic-file-in-project "gradlew"))
+              " " gradle-command))
      ((or (aic-file-in-project "pom.xml")
           (aic-file-in-project ".mvn")) (concat "mvn " maven-command))
      ((or (aic-file-in-project "build.gradle")
@@ -771,6 +817,78 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
   (let ((default-directory (aic-project-root)))
     (compile (aic-java-build-tool-command "test" "test"))))
 
+(defun aic-java-test-module ()
+  "Run tests from the nearest Maven or Gradle module directory."
+  (interactive)
+  (let ((default-directory (aic-java-module-root)))
+    (compile (aic-java-build-tool-command "test" "test"))))
+
+(defun aic-java-qualified-class-name ()
+  "Return the package-qualified class name for the current Java file."
+  (unless (and buffer-file-name
+               (string-equal (file-name-extension buffer-file-name) "java"))
+    (user-error "Current buffer does not visit a Java file"))
+  (let ((class-name (file-name-base buffer-file-name))
+        package-name)
+    (save-excursion
+      (goto-char (point-min))
+      (when (re-search-forward
+             "^[[:space:]]*package[[:space:]]+\\([[:alnum:]_.]+\\)[[:space:]]*;"
+             nil t)
+        (setq package-name (match-string-no-properties 1))))
+    (if package-name
+        (concat package-name "." class-name)
+      class-name)))
+
+(defun aic-java-treesit-method-at-point ()
+  "Return the enclosing Java method name using tree-sitter."
+  (when (and (derived-mode-p 'java-ts-mode)
+             (fboundp 'treesit-node-at))
+    (let ((node (treesit-node-at (point))))
+      (while (and node
+                  (not (member (treesit-node-type node)
+                               '("method_declaration"))))
+        (setq node (treesit-node-parent node)))
+      (when-let ((name-node
+                  (and node (treesit-node-child-by-field-name node "name"))))
+        (treesit-node-text name-node t)))))
+
+(defun aic-java-method-at-point ()
+  "Return the enclosing Java method name."
+  (if (derived-mode-p 'java-ts-mode)
+      (aic-java-treesit-method-at-point)
+    (require 'which-func)
+    (when-let ((name (which-function)))
+      (car (last (split-string name "\\." t))))))
+
+(defun aic-java-focused-test-command (&optional method)
+  "Return a class test command, narrowed to METHOD when non-nil."
+  (let* ((class-name (aic-java-qualified-class-name))
+         (selector (if method
+                       (pcase (aic-java-build-system)
+                         ('maven (concat class-name "#" method))
+                         ('gradle (concat class-name "." method)))
+                     class-name))
+         (quoted-selector (shell-quote-argument selector)))
+    (aic-java-build-tool-command
+     (format "-Dtest=%s test" quoted-selector)
+     (format "test --tests %s" quoted-selector))))
+
+(defun aic-java-test-class ()
+  "Run the current Java test class."
+  (interactive)
+  (let ((default-directory (aic-java-module-root)))
+    (compile (aic-java-focused-test-command))))
+
+(defun aic-java-test-method ()
+  "Run the Java test method containing point."
+  (interactive)
+  (let ((method (aic-java-method-at-point)))
+    (unless method
+      (user-error "Point is not inside a Java method"))
+    (let ((default-directory (aic-java-module-root)))
+      (compile (aic-java-focused-test-command method)))))
+
 (defun aic-java-package ()
   "Build the current Java project package."
   (interactive)
@@ -789,6 +907,36 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
   "Start Eglot and enable Eglot formatting on save."
   (aic-eglot-mode-setup t))
 
+(defun aic-java-eglot-configuration ()
+  "Return JDT LS runtime configuration for the managed JDKs."
+  `(:java
+    (:configuration
+     (:runtimes
+      ,(vector
+        `(:name "JavaSE-17"
+          :path ,(expand-file-name "~/.local/share/jdks/17"))
+        `(:name "JavaSE-25"
+          :path ,(expand-file-name "~/.local/share/jdks/25")
+          :default t))))))
+
+(defun aic-jdtls-workspace-directory (root)
+  "Return a stable JDT LS workspace directory for project ROOT."
+  (let* ((canonical-root (directory-file-name (file-truename root)))
+         (project-name (file-name-nondirectory canonical-root))
+         (project-hash (substring (secure-hash 'sha256 canonical-root) 0 12))
+         (cache-root (expand-file-name
+                      "jdtls"
+                      (or (getenv "XDG_CACHE_HOME") "~/.cache"))))
+    (expand-file-name (format "%s-%s" project-name project-hash) cache-root)))
+
+(defun aic-jdtls-contact (_interactive project)
+  "Return the JDT LS contact for PROJECT with an isolated workspace."
+  (let ((workspace
+         (aic-jdtls-workspace-directory
+          (if project (project-root project) (aic-project-root)))))
+    (make-directory workspace t)
+    (list "jdtls" "-data" workspace)))
+
 (defun aic-java-mode-setup ()
   "Set sensible defaults for Java and Spring Boot development."
   (setq-local c-basic-offset 4)
@@ -798,6 +946,8 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
               (append (and (boundp 'eglot-ignored-server-capabilities)
                            eglot-ignored-server-capabilities)
                       '(:documentOnTypeFormattingProvider)))
+  (setq-local eglot-workspace-configuration
+              (aic-java-eglot-configuration))
   (setq-local compile-command (aic-java-build-tool-command "test" "test"))
   (local-set-key (kbd "C-c C-r") #'aic-spring-boot-run)
   (local-set-key (kbd "C-c C-t") #'aic-java-test)
@@ -882,7 +1032,7 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
          (rust-ts-mode . aic-eglot-format-mode-setup))
   :config
   (add-to-list 'eglot-server-programs
-               '((java-mode java-ts-mode) . ("jdtls")))
+               '((java-mode java-ts-mode) . aic-jdtls-contact))
   (add-to-list 'eglot-server-programs
                '((c-mode c-ts-mode c++-mode c++-ts-mode) . ("clangd")))
   (add-to-list 'eglot-server-programs
@@ -903,6 +1053,10 @@ MAVEN-COMMAND and GRADLE-COMMAND are command suffixes without the tool name."
 (define-key aic-java-map (kbd "a") #'eglot-code-actions)
 (define-key aic-java-map (kbd "f") #'eglot-format)
 (define-key aic-java-map (kbd "e") #'consult-flymake)
+(define-key aic-java-map (kbd "t") #'aic-java-test-method)
+(define-key aic-java-map (kbd "c") #'aic-java-test-class)
+(define-key aic-java-map (kbd "m") #'aic-java-test-module)
+(define-key aic-java-map (kbd "T") #'aic-java-test)
 
 (use-package clang-format
   :ensure t)

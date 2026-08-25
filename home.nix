@@ -402,11 +402,17 @@
 
   home.sessionVariables = {
     JAVA_HOME = "${pkgs.jdk25}";
+    JAVA_17_HOME = "${pkgs.jdk17.home}";
+    JAVA_25_HOME = "${pkgs.jdk25.home}";
   };
 
   # copy dot files
   home.file.".config/ghostty/config".source = ./ghostty/config;
   home.file.".tmux.conf".source                       = ./.tmux.conf;
+  home.file.".emacs.d/tree-sitter/libtree-sitter-java.so".source =
+    "${pkgs.tree-sitter-grammars.tree-sitter-java}/parser";
+  home.file.".local/share/jdks/17".source = "${pkgs.jdk17.home}";
+  home.file.".local/share/jdks/25".source = "${pkgs.jdk25.home}";
   home.file.".agents/skills/development-loop".source = ./skills/development-loop;
   home.file.".claude/skills/development-loop".source = ./skills/development-loop;
 
