@@ -30,7 +30,6 @@
     tldr # man
     hyperfine # command-line benchmarking tool
     fzf # A command-line fuzzy finder
-    zoxide # z fast cd
     plocate # fast locate
 
     # archives
@@ -355,16 +354,16 @@
 
     bat.enable = true;
     zsh = {
-    	enable = true;
-	    oh-my-zsh = {
-		    enable = true;
-   		    plugins = [ "git" "z" "rails" ];
-  		    theme = "robbyrussell";
-  		};
+      enable = true;
       shellAliases = {
         ".." = "cd ..";
-         kport ="function _kport() { lsof -i tcp:\"$@\" | awk 'NR==2{print $2}' | xargs kill; };_kport";
+        kport = "function _kport() { lsof -i tcp:\"$@\" | awk 'NR==2{print $2}' | xargs kill; };_kport";
       };
+    };
+
+    zoxide = {
+      enable = true;
+      enableZshIntegration = true;
     };
 
     direnv = {
