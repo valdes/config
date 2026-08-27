@@ -421,8 +421,22 @@
     "${pkgs.tree-sitter-grammars.tree-sitter-java}/parser";
   home.file.".local/share/jdks/17".source = "${pkgs.jdk17.home}";
   home.file.".local/share/jdks/25".source = "${pkgs.jdk25.home}";
-  home.file.".agents/skills/development-loop".source = ./skills/development-loop;
-  home.file.".claude/skills/development-loop".source = ./skills/development-loop;
+  home.file.".agents/skills/development-loop" = {
+    source = config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/Github/config/skills/development-loop";
+  };
+  home.file.".agents/skills/manage-makefile" = {
+    source = config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/Github/config/skills/manage-makefile";
+  };
+  home.file.".claude/skills/development-loop" = {
+    source = config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/Github/config/skills/development-loop";
+  };
+  home.file.".claude/skills/manage-makefile" = {
+    source = config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/Github/config/skills/manage-makefile";
+  };
 
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage

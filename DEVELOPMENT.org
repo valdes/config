@@ -106,13 +106,16 @@ After editing the repo:
 #+end_src
 
 =make check= validates managed files and shell syntax. =make sync= installs the
-repo-managed Emacs, tmux, niri, and helper configuration into the home directory.
+repo-managed Emacs, tmux, niri, helper configuration, and shared Codex and
+Claude skills into the home directory.
 
 * Isolated agent task loop
 
 =dev-loop= is a small wrapper around Git worktrees, Codex or Claude, and
 GitLab merge requests. It gives the agent an isolated task checkout while the
-operator keeps control of review and integration.
+operator keeps control of review and integration. The shared =manage-makefile=
+skill keeps project Makefiles thin and requires every target to document itself
+through generated =make help= output.
 
 The workflow is intentionally supervised. Every new or resumed task session
 starts read-only: the agent investigates and presents a plan before the

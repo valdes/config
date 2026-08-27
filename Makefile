@@ -8,29 +8,23 @@ LOCAL_BIN_DIR := $(HOME_DIR)/.local/bin
 BACKGROUND_DIR := $(HOME_DIR)/.local/share/backgrounds
 NEWSBOAT_DIR := $(HOME_DIR)/.newsboat
 HOME_MANAGER_DIR := $(CONFIG_DIR)/home-manager
+SKILLS_DIR := $(REPO_ROOT)/skills
+CODEX_SKILLS_DIR := $(HOME_DIR)/.agents/skills
+CLAUDE_SKILLS_DIR := $(HOME_DIR)/.claude/skills
+MANAGED_SKILLS := development-loop manage-makefile
 HOME_MANAGER_REF ?= home-manager/master
 NIX_FLAKE_FLAGS := --extra-experimental-features "nix-command flakes"
 
-.PHONY: help sync sync-core sync-hidden sync-bin prepare switch apply reload-waybar toggle-waybar install-system-deps-arch install-system-deps-ubuntu26 status doctor check
+.DEFAULT_GOAL := help
 
-help:
-	@printf "%s\n" \
-		"Targets:" \
-		"  make prepare        Bootstrap Home Manager using the repo flake" \
-		"  make sync           Copy repo-managed files into place" \
-		"  make switch         Run home-manager --impure switch" \
-		"  make apply          sync + switch" \
-		"  make check          Validate repo-managed files and scripts" \
-		"  make install-system-deps-arch     Install Arch host dependencies" \
-		"  make install-system-deps-ubuntu26 Install Ubuntu 26.04 host dependencies" \
-		"  make reload-waybar  Send SIGUSR2 to waybar" \
-		"  make toggle-waybar  Send SIGUSR1 to waybar" \
-		"  make status         Show repo status" \
-		"  make doctor         Check required commands"
+.PHONY: help sync sync-core sync-hidden sync-bin sync-skills prepare switch apply reload-waybar toggle-waybar install-system-deps-arch install-system-deps-ubuntu26 status doctor check
 
-sync: sync-core sync-hidden sync-bin
+help: ## Show every available target and its purpose
+	@awk 'BEGIN { FS = ":.*## "; printf "Targets:\n" } /^[[:alnum:]_.-]+:.*## / { printf "  make %-34s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-sync-core:
+sync: sync-core sync-hidden sync-bin sync-skills ## Copy repo-managed files and link shared agent skills into place
+
+sync-core: ## Copy Home Manager, desktop, terminal, and background files
 	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)/foot" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
 	cp "$(REPO_ROOT)/home.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/flake.nix" "$(HOME_MANAGER_DIR)/"
@@ -41,13 +35,13 @@ sync-core:
 	cp "$(REPO_ROOT)/background.jpg" "$(BACKGROUND_DIR)/background.jpg"
 	cp "$(REPO_ROOT)/plantuml-1.2023.10.jar" "$(HOME_DIR)/"
 
-sync-hidden:
+sync-hidden: ## Copy shell, editor, and Newsboat dotfiles
 	cp "$(REPO_ROOT)/.emacs" "$(HOME_DIR)/"
 	cp "$(REPO_ROOT)/.tmux.conf" "$(HOME_DIR)/"
 	install -d "$(NEWSBOAT_DIR)"
 	cp "$(REPO_ROOT)/urls" "$(NEWSBOAT_DIR)/urls"
 
-sync-bin:
+sync-bin: ## Install repo-managed workflow commands
 	install -d "$(BIN_DIR)" "$(LOCAL_BIN_DIR)"
 	install -m 0755 "$(REPO_ROOT)/bin/dev-session" "$(BIN_DIR)/dev-session"
 	install -m 0755 "$(REPO_ROOT)/bin/dev-loop" "$(BIN_DIR)/dev-loop"
@@ -59,35 +53,57 @@ sync-bin:
 	install -m 0755 "$(REPO_ROOT)/bin/rssget" "$(LOCAL_BIN_DIR)/rssget"
 	install -m 0755 "$(REPO_ROOT)/bin/toggle-waybar" "$(LOCAL_BIN_DIR)/toggle-waybar"
 
-switch:
+sync-skills: ## Link repo-managed skills globally for Codex and Claude
+	@set -eu; \
+	for skill in $(MANAGED_SKILLS); do \
+		source="$(SKILLS_DIR)/$$skill"; \
+		test -f "$$source/SKILL.md" || { echo "missing skill: $$source" >&2; exit 1; }; \
+		for root in "$(CODEX_SKILLS_DIR)" "$(CLAUDE_SKILLS_DIR)"; do \
+			target="$$root/$$skill"; \
+			if { test -e "$$target" || test -L "$$target"; } && ! test -L "$$target"; then \
+				echo "refusing to replace non-symlink: $$target" >&2; \
+				exit 1; \
+			fi; \
+		done; \
+	done; \
+	install -d "$(CODEX_SKILLS_DIR)" "$(CLAUDE_SKILLS_DIR)"; \
+	for skill in $(MANAGED_SKILLS); do \
+		for root in "$(CODEX_SKILLS_DIR)" "$(CLAUDE_SKILLS_DIR)"; do \
+			ln -sfn "$(SKILLS_DIR)/$$skill" "$$root/$$skill"; \
+		done; \
+	done
+
+switch: ## Apply the Home Manager configuration from this repository
 	nix $(NIX_FLAKE_FLAGS) run $(HOME_MANAGER_REF) -- switch --flake "path:$(REPO_ROOT)#vals"
 
-apply: sync switch
+apply: sync switch ## Sync files and apply the Home Manager configuration
 
-prepare:
+prepare: ## Bootstrap Home Manager from this repository with backups
 	nix $(NIX_FLAKE_FLAGS) run $(HOME_MANAGER_REF) -- switch -b backup --flake "path:$(REPO_ROOT)#vals"
 
-reload-waybar:
+reload-waybar: ## Reload the running Waybar configuration and styles
 	"$(REPO_ROOT)/bin/reload-waybar"
 
-toggle-waybar:
+toggle-waybar: ## Toggle Waybar visibility
 	"$(REPO_ROOT)/bin/toggle-waybar"
 
-install-system-deps-arch:
+install-system-deps-arch: ## Install host dependencies on Arch Linux
 	"$(REPO_ROOT)/bin/install-system-deps-arch"
 
-install-system-deps-ubuntu26:
+install-system-deps-ubuntu26: ## Install host dependencies on Ubuntu 26.04
 	"$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
 
-status:
+status: ## Show the concise Git working-tree status
 	git status --short
 
-doctor:
+doctor: ## Check that required workstation commands are available
 	@for cmd in home-manager cp install git glab emacs emacsclient tmux codex claude foot wl-copy wl-paste; do \
 		command -v "$$cmd" >/dev/null || { echo "missing: $$cmd"; exit 1; }; \
 	done
 
-check:
+check: ## Validate repo-managed files, scripts, and desktop configuration
+	@undocumented="$$(awk '/^[[:alnum:]_-][[:alnum:]_.-]*:/ && $$0 !~ /## / { sub(/:.*/, "", $$1); print $$1 }' "$(REPO_ROOT)/Makefile")"; \
+		test -z "$$undocumented" || { printf "undocumented Make targets:\n%s\n" "$$undocumented" >&2; exit 1; }
 	test -f "$(REPO_ROOT)/DEVELOPMENT.org"
 	test -f "$(REPO_ROOT)/home.nix"
 	test -f "$(REPO_ROOT)/niri/config.kdl"
@@ -99,6 +115,7 @@ check:
 	test -x "$(REPO_ROOT)/bin/dev-session"
 	test -x "$(REPO_ROOT)/bin/dev-loop"
 	test -f "$(REPO_ROOT)/skills/development-loop/SKILL.md"
+	test -f "$(REPO_ROOT)/skills/manage-makefile/SKILL.md"
 	test -f "$(REPO_ROOT)/templates/agent-task.md"
 	test -x "$(REPO_ROOT)/tests/dev-loop-test"
 	test -x "$(REPO_ROOT)/tests/dev-session-test"
