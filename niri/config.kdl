@@ -54,7 +54,7 @@ window-rule {
     open-on-workspace "build"
 }
 
-// Project terminals use a distinct Ghostty app ID so ad-hoc terminals can
+// Project terminals use a distinct Foot app ID so ad-hoc terminals can
 // still open on the current workspace.
 window-rule {
     match app-id=r#"^dev\.vals\.DevSession$"#
@@ -494,7 +494,7 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
-    Mod+T hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
+    Mod+T hotkey-overlay-title="Open a Terminal: foot" { spawn "foot"; }
     Mod+D hotkey-overlay-title="Run an Application: Noctalia" { spawn-sh "noctalia msg panel-toggle launcher"; }
     Super+B hotkey-overlay-title="Toggle Noctalia Bar" { spawn-sh "noctalia msg bar-toggle"; }
     Mod+S hotkey-overlay-title="Open Noctalia Control Center" { spawn-sh "noctalia msg panel-toggle control-center"; }

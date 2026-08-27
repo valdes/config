@@ -31,13 +31,13 @@ help:
 sync: sync-core sync-hidden sync-bin
 
 sync-core:
-	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)/ghostty" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
+	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)/foot" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
 	cp "$(REPO_ROOT)/home.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/flake.nix" "$(HOME_MANAGER_DIR)/"
 	cp -r "$(REPO_ROOT)/niri" "$(CONFIG_DIR)/"
 	cp -r "$(REPO_ROOT)/waybar" "$(CONFIG_DIR)/"
 	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
-	cp "$(REPO_ROOT)/ghostty/config" "$(CONFIG_DIR)/ghostty/config"
+	cp "$(REPO_ROOT)/foot/foot.ini" "$(CONFIG_DIR)/foot/foot.ini"
 	cp "$(REPO_ROOT)/background.jpg" "$(BACKGROUND_DIR)/background.jpg"
 	cp "$(REPO_ROOT)/plantuml-1.2023.10.jar" "$(HOME_DIR)/"
 
@@ -83,7 +83,7 @@ status:
 	git status --short
 
 doctor:
-	@for cmd in home-manager cp install git glab emacs emacsclient tmux codex claude ghostty wl-copy wl-paste; do \
+	@for cmd in home-manager cp install git glab emacs emacsclient tmux codex claude foot wl-copy wl-paste; do \
 		command -v "$$cmd" >/dev/null || { echo "missing: $$cmd"; exit 1; }; \
 	done
 
@@ -93,7 +93,7 @@ check:
 	test -f "$(REPO_ROOT)/niri/config.kdl"
 	test -f "$(REPO_ROOT)/waybar/config.jsonc"
 	test -f "$(REPO_ROOT)/waybar/style.css"
-	test -f "$(REPO_ROOT)/ghostty/config"
+	test -f "$(REPO_ROOT)/foot/foot.ini"
 	test -f "$(REPO_ROOT)/background.jpg"
 	test -f "$(REPO_ROOT)/urls"
 	test -x "$(REPO_ROOT)/bin/dev-session"

@@ -58,7 +58,7 @@
   "cpu": {
     "interval": 5,
     "format": "󰍛",
-    "on-click": "alacritty -e btop"
+    "on-click": "foot btop"
   },
   "clock": {
     "format": "{:%A %H:%M}",
@@ -76,7 +76,7 @@
     "tooltip-format-disconnected": "Disconnected",
     "interval": 3,
     "nospacing": 1,
-    "on-click": "alacritty --class=Impala -e impala"
+    "on-click": "foot --app-id=Impala impala"
   },
   "battery": {
     "format": "{capacity}% {icon}",
@@ -105,7 +105,7 @@
   },
   "pulseaudio": {
     "format": "{icon}",
-    "on-click": "alacritty --class=Wiremix -e wiremix",
+    "on-click": "foot --app-id=Wiremix wiremix",
     "on-click-right": "pamixer -t",
     "tooltip-format": "Playing at {volume}%",
     "scroll-step": 5,

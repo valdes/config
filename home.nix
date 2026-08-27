@@ -136,7 +136,7 @@
     flameshot # screenshot tool
     xournalpp # handwriting tool with pdf annotation support
     pinta # quick image editing
-    ghostty
+    foot
     zellij
 
     # desktop runtime dependencies
@@ -408,10 +408,15 @@
     JAVA_HOME = "${pkgs.jdk25}";
     JAVA_17_HOME = "${pkgs.jdk17.home}";
     JAVA_25_HOME = "${pkgs.jdk25.home}";
+    TERMINAL = "foot";
   };
 
+  xdg.configFile."xdg-terminals.list".text = ''
+    foot.desktop
+  '';
+
   # copy dot files
-  home.file.".config/ghostty/config".source = ./ghostty/config;
+  home.file.".config/foot/foot.ini".source = ./foot/foot.ini;
   home.file.".tmux.conf".source                       = ./.tmux.conf;
   home.file.".emacs.d/tree-sitter/libtree-sitter-java.so".source =
     "${pkgs.tree-sitter-grammars.tree-sitter-java}/parser";

@@ -18,7 +18,7 @@ session_name=""
 task_name=""
 task_cwd=""
 codex_command=${DEV_SESSION_CODEX:-codex}
-terminal_command=${DEV_SESSION_TERMINAL:-ghostty}
+terminal_command=${DEV_SESSION_TERMINAL:-foot}
 tmux_command=${DEV_SESSION_TMUX:-tmux}
 
 while (($#)); do
@@ -175,8 +175,8 @@ if $launch_if_detached && ! "$tmux_command" list-clients -t "=$session_name" >/d
 fi
 
 if $launch_terminal; then
-  "$terminal_command" --class=dev.vals.DevSession --working-directory "$project" \
-    -e tmux attach-session -t "=$session_name" \
+  "$terminal_command" --app-id=dev.vals.DevSession --working-directory="$project" \
+    tmux attach-session -t "=$session_name" \
     >/dev/null 2>&1 &
 elif [[ -n "$task_name" ]]; then
   exit 0
