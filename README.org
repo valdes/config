@@ -72,6 +72,58 @@ Useful diagnostics:
   journalctl --user -b | rg noctalia
 #+end_src
 
+** Privacy baseline
+
+Home Manager installs Firefox, KeePassXC, Restic, SOPS with age, Gitleaks, and
+MAT2. Firefox is the default browser and installs uBlock Origin and
+KeePassXC-Browser from Mozilla Add-ons. In KeePassXC, enable =Browser
+Integration -> Firefox= once, then pair the extension with the unlocked
+database. KeePassXC owns its mutable settings and databases; Home Manager owns
+the package and native-messaging manifest.
+
+Restic repositories are intentionally operator-selected. Initialize one on an
+external or remote mount, run a backup, verify it, and test a restore before
+depending on it:
+
+#+begin_src sh :results output silent
+  restic -r /mnt/backup/restic init
+  restic -r /mnt/backup/restic backup "$HOME"
+  restic -r /mnt/backup/restic check --read-data
+  restic -r /mnt/backup/restic restore latest --target /tmp/restic-restore
+#+end_src
+
+Do not put the repository password in this repository. Restic prompts for it
+when no password source is configured. Back up the password separately from the
+repository.
+
+Create an age identity outside Git before adding SOPS-encrypted secrets to a
+project. Back up the identity separately, use the printed public recipient in
+that project's =.sops.yaml=, and commit only SOPS-encrypted files:
+
+#+begin_src sh :results output silent
+  install -d -m 0700 "$HOME/.config/sops/age"
+  age-keygen -o "$HOME/.config/sops/age/keys.txt"
+  chmod 0600 "$HOME/.config/sops/age/keys.txt"
+#+end_src
+
+Scan committed history for secrets and make a metadata-cleaned copy before
+sharing a supported document or image:
+
+#+begin_src sh :results output silent
+  make secrets-check
+  mat2 document.pdf
+#+end_src
+
+The host dependency installers configure UFW with default-deny inbound traffic,
+rate-limited SSH, and LocalSend on TCP/UDP port 53317. They preserve unrelated
+rules rather than resetting the firewall. Docker-published ports can bypass UFW;
+bind development services to loopback unless they are intentionally exposed.
+Neither =make switch= nor =make sync= changes the live firewall.
+
+VPN provider configuration, Tor routing, USBGuard, DNS proxies, and automated
+Restic credentials remain explicit operator choices rather than workstation
+defaults.
+
 ** Day-to-Day
 
 Show repo status:

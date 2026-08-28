@@ -19,7 +19,7 @@ TERMINAL="${NIRI_CTL_TERMINAL:-foot}"
 EDITOR="${NIRI_CTL_EDITOR:-code}"
 EMACSCLIENT="${NIRI_CTL_EMACSCLIENT:-emacsclient}"
 DEV_SESSION="${NIRI_CTL_DEV_SESSION:-dev-session}"
-BROWSER="${NIRI_CTL_BROWSER:-microsoft-edge}"
+BROWSER="${NIRI_CTL_BROWSER:-firefox}"
 
 launch_project_browser() {
   case "${BROWSER##*/}" in

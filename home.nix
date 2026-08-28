@@ -108,6 +108,13 @@
     lazydocker
     gum # iteractive shell menu creation
 
+    # privacy and secret hygiene
+    age
+    sops
+    restic
+    gitleaks
+    mat2
+
     # language servers
     clang-tools
     zls
@@ -158,6 +165,38 @@
   fonts.fontconfig.enable = true;
 
   programs = {
+    firefox = {
+      enable = true;
+      configPath = ".mozilla/firefox";
+      policies = {
+        DisableFirefoxStudies = true;
+        DisablePocket = true;
+        DisableTelemetry = true;
+        HttpsOnlyMode = "enabled";
+        EnableTrackingProtection = {
+          Value = true;
+          Cryptomining = true;
+          EmailTracking = true;
+          Fingerprinting = true;
+          SuspectedFingerprinting = true;
+        };
+        ExtensionSettings = {
+          "uBlock0@raymondhill.net" = {
+            installation_mode = "normal_installed";
+            install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
+          };
+          "keepassxc-browser@keepassxc.org" = {
+            installation_mode = "normal_installed";
+            install_url = "https://addons.mozilla.org/firefox/downloads/latest/keepassxc-browser/latest.xpi";
+          };
+        };
+      };
+    };
+
+    # Keep the application settings mutable; Home Manager only owns the
+    # package and browser native-messaging manifest.
+    keepassxc.enable = true;
+
     noctalia = {
       enable = true;
       systemd.enable = false;
@@ -168,7 +207,7 @@
           telemetry_enabled = false;
           polkit_agent = true;
           clipboard_enabled = true;
-          clipboard_history_max_entries = 100;
+          clipboard_history_max_entries = 20;
           launch_apps_as_systemd_services = false;
         };
 
@@ -197,12 +236,12 @@
         brightness.enable_ddcutil = false;
 
         idle.behavior.lock = {
-          enabled = false;
+          enabled = true;
           timeout = 600;
           action = "lock";
         };
         idle.behavior.screen-off = {
-          enabled = false;
+          enabled = true;
           timeout = 660;
           action = "screen_off";
         };
@@ -404,6 +443,7 @@
   };
 
   home.sessionVariables = {
+    BROWSER = "firefox";
     JAVA_HOME = "${pkgs.jdk25}";
     JAVA_17_HOME = "${pkgs.jdk17.home}";
     JAVA_25_HOME = "${pkgs.jdk25.home}";
@@ -413,6 +453,15 @@
   xdg.configFile."xdg-terminals.list".text = ''
     foot.desktop
   '';
+
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "text/html" = [ "firefox.desktop" ];
+      "x-scheme-handler/http" = [ "firefox.desktop" ];
+      "x-scheme-handler/https" = [ "firefox.desktop" ];
+    };
+  };
 
   # copy dot files
   home.file.".config/foot/foot.ini".source = ./foot/foot.ini;

@@ -14,10 +14,11 @@ CLAUDE_SKILLS_DIR := $(HOME_DIR)/.claude/skills
 MANAGED_SKILLS := development-loop manage-makefile
 HOME_MANAGER_REF ?= home-manager/master
 NIX_FLAKE_FLAGS := --extra-experimental-features "nix-command flakes"
+GITLEAKS ?= gitleaks
 
 .DEFAULT_GOAL := help
 
-.PHONY: help sync sync-core sync-hidden sync-bin sync-skills prepare switch apply reload-waybar toggle-waybar install-system-deps-arch install-system-deps-ubuntu26 status doctor check
+.PHONY: help sync sync-core sync-hidden sync-bin sync-skills prepare switch apply reload-waybar toggle-waybar install-system-deps-arch install-system-deps-ubuntu26 status doctor secrets-check check
 
 help: ## Show every available target and its purpose
 	@awk 'BEGIN { FS = ":.*## "; printf "Targets:\n" } /^[[:alnum:]_.-]+:.*## / { printf "  make %-34s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -97,9 +98,12 @@ status: ## Show the concise Git working-tree status
 	git status --short
 
 doctor: ## Check that required workstation commands are available
-	@for cmd in home-manager cp install git glab emacs emacsclient tmux codex claude foot wl-copy wl-paste; do \
+	@for cmd in home-manager cp install git glab emacs emacsclient tmux codex claude foot wl-copy wl-paste firefox keepassxc restic sops age age-keygen gitleaks mat2; do \
 		command -v "$$cmd" >/dev/null || { echo "missing: $$cmd"; exit 1; }; \
 	done
+
+secrets-check: ## Scan the current branch history for committed secrets
+	"$(GITLEAKS)" git --no-banner --redact "$(REPO_ROOT)"
 
 check: ## Validate repo-managed files, scripts, and desktop configuration
 	@undocumented="$$(awk '/^[[:alnum:]_-][[:alnum:]_.-]*:/ && $$0 !~ /## / { sub(/:.*/, "", $$1); print $$1 }' "$(REPO_ROOT)/Makefile")"; \
@@ -138,7 +142,7 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	bash -n "$(REPO_ROOT)/bin/toggle-waybar"
 	bash -n "$(REPO_ROOT)/tests/dev-loop-test"
 	bash -n "$(REPO_ROOT)/tests/dev-session-test"
-	shellcheck "$(REPO_ROOT)/bin/dev-session" "$(REPO_ROOT)/bin/dev-loop" "$(REPO_ROOT)/tests/dev-loop-test" "$(REPO_ROOT)/tests/dev-session-test"
+	shellcheck "$(REPO_ROOT)/bin/dev-session" "$(REPO_ROOT)/bin/dev-loop" "$(REPO_ROOT)/bin/niri-ctl" "$(REPO_ROOT)/bin/install-system-deps-arch" "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(REPO_ROOT)/tests/dev-loop-test" "$(REPO_ROOT)/tests/dev-session-test"
 	emacs --batch -Q --eval '(with-temp-buffer (insert-file-contents "$(REPO_ROOT)/.emacs") (emacs-lisp-mode) (check-parens))'
 	"$(REPO_ROOT)/tests/dev-loop-test"
 	"$(REPO_ROOT)/tests/dev-session-test"
