@@ -34,7 +34,6 @@ sync-core: ## Copy Home Manager, desktop, terminal, and background files
 	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
 	cp "$(REPO_ROOT)/foot/foot.ini" "$(CONFIG_DIR)/foot/foot.ini"
 	cp "$(REPO_ROOT)/background.jpg" "$(BACKGROUND_DIR)/background.jpg"
-	cp "$(REPO_ROOT)/plantuml-1.2023.10.jar" "$(HOME_DIR)/"
 
 sync-hidden: ## Copy shell, editor, and Newsboat dotfiles
 	cp "$(REPO_ROOT)/.emacs" "$(HOME_DIR)/"
