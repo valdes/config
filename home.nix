@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   # Home Manager needs a bit of information about you and the
@@ -454,14 +454,12 @@
     foot.desktop
   '';
 
-  xdg.mimeApps = {
-    enable = true;
-    defaultApplications = {
-      "text/html" = [ "firefox.desktop" ];
-      "x-scheme-handler/http" = [ "firefox.desktop" ];
-      "x-scheme-handler/https" = [ "firefox.desktop" ];
-    };
-  };
+  # Keep MIME associations mutable and change only the browser defaults.
+  home.activation.setFirefoxDefault = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${pkgs.xdg-utils}/bin/xdg-mime default firefox.desktop text/html
+    run ${pkgs.xdg-utils}/bin/xdg-mime default firefox.desktop x-scheme-handler/http
+    run ${pkgs.xdg-utils}/bin/xdg-mime default firefox.desktop x-scheme-handler/https
+  '';
 
   # copy dot files
   home.file.".config/foot/foot.ini".source = ./foot/foot.ini;
