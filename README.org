@@ -21,8 +21,8 @@ Sync repo-managed files into place:
   make sync
 #+end_src
 
-This also links the shared =development-loop= and =manage-makefile= skills into
-the global Codex and Claude skill directories.
+This also links the shared =manage-makefile= skill into the global Codex and
+Claude skill directories.
 
 Apply the Home Manager configuration:
 #+begin_src sh :results output silent

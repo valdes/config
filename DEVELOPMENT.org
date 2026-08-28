@@ -106,8 +106,8 @@ After editing the repo:
 #+end_src
 
 =make check= validates managed files and shell syntax. =make sync= installs the
-repo-managed Emacs, tmux, niri, helper configuration, and shared Codex and
-Claude skills into the home directory.
+repo-managed Emacs, tmux, niri, helper configuration, and shared
+=manage-makefile= skill into the Codex and Claude skill directories.
 
 * Isolated agent task loop
 
@@ -135,7 +135,7 @@ Apply this repository normally:
 #+end_src
 
 This installs =dev-loop= in =~/bin=, =glab= through Home Manager, and the shared
-=development-loop= skill for Codex and Claude. Both agent CLIs must already be
+=manage-makefile= skill for Codex and Claude. Both agent CLIs must already be
 installed and authenticated. For GitLab work, authenticate =glab= as well:
 
 #+begin_src sh :results output silent
@@ -365,7 +365,7 @@ Worktrees and branch metadata are ordinary Git state:
 
 If a personal target branch advances, rebase the task onto the new target,
 update its =dev-loop-base= metadata to that target commit, rerun affected checks,
-and review and approve the refreshed result before finishing. The agent skill
-contains the exact recovery rule.
+and review and approve the refreshed result before finishing. =dev-loop=
+reports this recovery rule when it detects an advanced target.
 
 Use =dev-loop help= for the compact command reference.

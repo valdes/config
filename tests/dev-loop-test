@@ -43,6 +43,28 @@ printf 'arg=%s\n' "$@" >>"$DEV_LOOP_TEST_LOG"
 EOF
 chmod +x "$mock_bin/mock-claude"
 
+cat >"$mock_bin/mock-dev-session" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+task_cwd=""
+while (($#)); do
+  case "$1" in
+  --cwd)
+    task_cwd=$2
+    shift 2
+    ;;
+  --)
+    shift
+    cd "$task_cwd"
+    exec "$@"
+    ;;
+  *) shift ;;
+  esac
+done
+exit 2
+EOF
+chmod +x "$mock_bin/mock-dev-session"
+
 cat >"$mock_bin/mock-glab" <<'EOF'
 #!/usr/bin/env bash
 printf 'glab=%s\n' "$*" >>"$DEV_LOOP_TEST_LOG"
@@ -55,6 +77,7 @@ chmod +x "$mock_bin/mock-glab"
 export PATH="$mock_bin:$PATH"
 export DEV_LOOP_CODEX=mock-codex
 export DEV_LOOP_CLAUDE=mock-claude
+export DEV_LOOP_DEV_SESSION=mock-dev-session
 export DEV_LOOP_GLAB=mock-glab
 export DEV_LOOP_TEST_LOG="$test_root/calls.log"
 
@@ -67,7 +90,8 @@ new_repo "$personal"
 personal_worktree="$test_root/.worktrees/personal/small-task"
 [[ -d "$personal_worktree" ]] || fail "personal worktree was not created beside repository"
 [[ "$(git -C "$personal" config --get branch.agent/small-task.dev-loop-agent)" == codex ]] || fail "agent metadata missing"
-assert_contains "$DEV_LOOP_TEST_LOG" "arg=workspace-write"
+assert_contains "$DEV_LOOP_TEST_LOG" "arg=read-only"
+assert_contains "$DEV_LOOP_TEST_LOG" "decision-complete implementation plan"
 
 printf 'changed\n' >>"$personal_worktree/file.txt"
 (
