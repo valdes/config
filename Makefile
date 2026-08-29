@@ -18,7 +18,7 @@ GITLEAKS ?= gitleaks
 
 .DEFAULT_GOAL := help
 
-.PHONY: help sync sync-core sync-hidden sync-bin sync-skills prepare switch apply switch-keyd rollback-keyd reload-waybar toggle-waybar install-system-deps-arch install-system-deps-ubuntu26 status doctor secrets-check check
+.PHONY: help sync sync-core sync-hidden sync-bin sync-skills prepare switch apply switch-keyd rollback-keyd install-system-deps-arch install-system-deps-ubuntu26 status doctor secrets-check check
 
 help: ## Show every available target and its purpose
 	@awk 'BEGIN { FS = ":.*## "; printf "Targets:\n" } /^[[:alnum:]_.-]+:.*## / { printf "  make %-34s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -31,7 +31,6 @@ sync-core: ## Copy Home Manager, desktop, terminal, and background files
 	cp "$(REPO_ROOT)/flake.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/keyd.nix" "$(HOME_MANAGER_DIR)/"
 	cp -r "$(REPO_ROOT)/niri" "$(CONFIG_DIR)/"
-	cp -r "$(REPO_ROOT)/waybar" "$(CONFIG_DIR)/"
 	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
 	cp "$(REPO_ROOT)/foot/foot.ini" "$(CONFIG_DIR)/foot/foot.ini"
 	cp "$(REPO_ROOT)/herdr/config.toml" "$(CONFIG_DIR)/herdr/config.toml"
@@ -50,10 +49,8 @@ sync-bin: ## Install repo-managed workflow commands
 	install -m 0755 "$(REPO_ROOT)/bin/niri-ctl" "$(BIN_DIR)/niri-ctl"
 	install -m 0755 "$(REPO_ROOT)/bin/install-system-deps-arch" "$(BIN_DIR)/install-system-deps-arch"
 	install -m 0755 "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(BIN_DIR)/install-system-deps-ubuntu26"
-	install -m 0755 "$(REPO_ROOT)/bin/reload-waybar" "$(LOCAL_BIN_DIR)/reload-waybar"
 	install -m 0755 "$(REPO_ROOT)/bin/rssadd" "$(LOCAL_BIN_DIR)/rssadd"
 	install -m 0755 "$(REPO_ROOT)/bin/rssget" "$(LOCAL_BIN_DIR)/rssget"
-	install -m 0755 "$(REPO_ROOT)/bin/toggle-waybar" "$(LOCAL_BIN_DIR)/toggle-waybar"
 
 sync-skills: ## Link repo-managed skills globally for Codex and Claude
 	@set -eu; \
@@ -89,12 +86,6 @@ switch-keyd: ## Build and apply the Nix-managed keyd system service
 rollback-keyd: ## Roll back the Nix-managed keyd system service one generation
 	"$(REPO_ROOT)/bin/keyd-system" rollback
 
-reload-waybar: ## Reload the running Waybar configuration and styles
-	"$(REPO_ROOT)/bin/reload-waybar"
-
-toggle-waybar: ## Toggle Waybar visibility
-	"$(REPO_ROOT)/bin/toggle-waybar"
-
 install-system-deps-arch: ## Install host dependencies on Arch Linux
 	"$(REPO_ROOT)/bin/install-system-deps-arch"
 
@@ -119,8 +110,6 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	test -f "$(REPO_ROOT)/home.nix"
 	test -f "$(REPO_ROOT)/keyd.nix"
 	test -f "$(REPO_ROOT)/niri/config.kdl"
-	test -f "$(REPO_ROOT)/waybar/config.jsonc"
-	test -f "$(REPO_ROOT)/waybar/style.css"
 	test -f "$(REPO_ROOT)/foot/foot.ini"
 	test -f "$(REPO_ROOT)/herdr/config.toml"
 	test -f "$(REPO_ROOT)/background.jpg"
@@ -134,10 +123,8 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	test -f "$(REPO_ROOT)/bin/niri-ctl"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-arch"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
-	test -f "$(REPO_ROOT)/bin/reload-waybar"
 	test -f "$(REPO_ROOT)/bin/rssadd"
 	test -f "$(REPO_ROOT)/bin/rssget"
-	test -f "$(REPO_ROOT)/bin/toggle-waybar"
 	test -x "$(REPO_ROOT)/bin/keyd-system"
 	nix $(NIX_FLAKE_FLAGS) build --no-link "path:$(REPO_ROOT)#keyd-system"
 	niri validate -c "$(REPO_ROOT)/niri/config.kdl"
@@ -146,10 +133,8 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	bash -n "$(REPO_ROOT)/bin/niri-ctl"
 	bash -n "$(REPO_ROOT)/bin/install-system-deps-arch"
 	bash -n "$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
-	bash -n "$(REPO_ROOT)/bin/reload-waybar"
 	sh -n "$(REPO_ROOT)/bin/rssadd"
 	bash -n "$(REPO_ROOT)/bin/rssget"
-	bash -n "$(REPO_ROOT)/bin/toggle-waybar"
 	bash -n "$(REPO_ROOT)/bin/keyd-system"
 	bash -n "$(REPO_ROOT)/tests/dev-loop-test"
 	bash -n "$(REPO_ROOT)/tests/dev-session-test"

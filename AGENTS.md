@@ -29,7 +29,7 @@ This repo contains personal Linux configuration. Do not normalize it into a gene
 
 - Prefer `home.nix` and related Nix/Home Manager config for managed packages and dotfiles.
 - Treat local scripts in `bin/` as intentional workflow glue, not incidental clutter.
-- Keep `niri/` and `waybar/` aligned with the existing workspace-driven desktop model.
+- Keep `niri/` and the Noctalia configuration in `home.nix` aligned with the existing workspace-driven desktop model.
 
 ## UI And UX Taste
 

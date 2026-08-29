@@ -89,8 +89,7 @@ Nix/Home Manager with the script matching the host distribution:
 #+end_src
 
 Noctalia is started by niri after =make apply=; restart the niri session to
-complete the cutover. To return temporarily to the previous shell, restore the
-Waybar/swaybg startup lines and the original niri bindings, then rebuild.
+complete the cutover.
 
 Useful diagnostics:
 
@@ -157,16 +156,6 @@ defaults.
 Show repo status:
 #+begin_src sh :results output silent
   make status
-#+end_src
-
-Reload Waybar after config or style changes:
-#+begin_src sh :results output silent
-  make reload-waybar
-#+end_src
-
-Toggle Waybar visibility:
-#+begin_src sh :results output silent
-  make toggle-waybar
 #+end_src
 
 ** Emacs and agents

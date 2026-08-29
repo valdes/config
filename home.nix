@@ -149,18 +149,8 @@
 
     # desktop runtime dependencies
     niri
-    waybar
-    swaybg
     fuzzel
     wl-clipboard
-    cliphist
-    swaylock
-    playerctl
-    brightnessctl
-    pamixer
-    blueman
-    impala
-    wiremix
     xwayland-satellite
   ];
 
