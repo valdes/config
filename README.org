@@ -34,6 +34,34 @@ Do both in one step:
   make apply
 #+end_src
 
+** keyd
+
+Home Manager installs the =keyd= CLI. The system daemon and its generated
+=/etc/keyd/default.conf= are built from the structured mappings in =keyd.nix=
+and kept in a root Nix profile.
+
+Build and apply a new generation explicitly:
+#+begin_src sh :results output silent
+  make switch-keyd
+#+end_src
+
+The first switch preserves the existing configuration as
+=/etc/keyd/default.conf.pre-nix=. Roll back one generation with:
+#+begin_src sh :results output silent
+  make rollback-keyd
+#+end_src
+
+Inspect the live service and generated configuration with:
+#+begin_src sh :results output silent
+  systemctl status keyd
+  readlink -f /etc/keyd/default.conf
+  keyd check /etc/keyd/default.conf
+#+end_src
+
+If a bad mapping captures the keyboard, press =Backspace+Escape+Enter= to stop
+keyd. The distribution-provided keyd package can be removed after confirming
+that the service runs from the Nix profile.
+
 ** Noctalia
 
 Noctalia v5 owns the shell surfaces around niri: bar, launcher, wallpaper,

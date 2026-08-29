@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly REPO_ROOT
+readonly KEYD_PROFILE="/nix/var/nix/profiles/keyd-system"
+readonly KEYD_CONFIG="/etc/keyd/default.conf"
+readonly KEYD_CONFIG_BACKUP="/etc/keyd/default.conf.pre-nix"
+readonly KEYD_UNIT="/etc/systemd/system/keyd.service"
+readonly NIX_FLAGS=(--extra-experimental-features "nix-command flakes")
+
+usage() {
+  printf 'Usage: %s switch|rollback\n' "${0##*/}" >&2
+  exit 2
+}
+
+require_commands() {
+  local command_name
+
+  for command_name in nix sudo systemctl; do
+    command -v "$command_name" >/dev/null 2>&1 || {
+      printf 'Error: required command not found: %s\n' "$command_name" >&2
+      exit 1
+    }
+  done
+}
+
+verify_profile() {
+  test -x "$KEYD_PROFILE/bin/keyd" || {
+    printf 'Error: keyd binary missing from %s\n' "$KEYD_PROFILE" >&2
+    exit 1
+  }
+  test -f "$KEYD_PROFILE/etc/keyd/default.conf" || {
+    printf 'Error: keyd config missing from %s\n' "$KEYD_PROFILE" >&2
+    exit 1
+  }
+  test -f "$KEYD_PROFILE/lib/systemd/system/keyd.service" || {
+    printf 'Error: keyd unit missing from %s\n' "$KEYD_PROFILE" >&2
+    exit 1
+  }
+
+  "$KEYD_PROFILE/bin/keyd" check "$KEYD_PROFILE/etc/keyd/default.conf"
+}
+
+install_system_links() {
+  sudo install -d -m 0755 /etc/keyd /etc/systemd/system
+
+  if [[ ( -e "$KEYD_CONFIG" || -L "$KEYD_CONFIG" ) && ! -e "$KEYD_CONFIG_BACKUP" ]]; then
+    sudo cp -a --no-dereference "$KEYD_CONFIG" "$KEYD_CONFIG_BACKUP"
+    printf 'Preserved previous config at %s\n' "$KEYD_CONFIG_BACKUP"
+  fi
+
+  sudo ln -sfn "$KEYD_PROFILE/etc/keyd/default.conf" "$KEYD_CONFIG"
+  sudo ln -sfn "$KEYD_PROFILE/lib/systemd/system/keyd.service" "$KEYD_UNIT"
+}
+
+restart_keyd() {
+  sudo systemctl daemon-reload
+  sudo systemctl enable keyd.service
+  sudo systemctl restart keyd.service
+  sudo systemctl is-active --quiet keyd.service
+  printf 'keyd is active from %s\n' "$KEYD_PROFILE"
+}
+
+switch_keyd() {
+  sudo nix "${NIX_FLAGS[@]}" build \
+    --profile "$KEYD_PROFILE" \
+    "path:$REPO_ROOT#keyd-system"
+  verify_profile
+  install_system_links
+  restart_keyd
+}
+
+rollback_keyd() {
+  test -e "$KEYD_PROFILE" || {
+    printf 'Error: keyd profile does not exist: %s\n' "$KEYD_PROFILE" >&2
+    exit 1
+  }
+
+  sudo nix "${NIX_FLAGS[@]}" profile rollback --profile "$KEYD_PROFILE"
+  verify_profile
+  install_system_links
+  restart_keyd
+}
+
+require_commands
+
+case "${1:-}" in
+  switch)
+    switch_keyd
+    ;;
+  rollback)
+    rollback_keyd
+    ;;
+  *)
+    usage
+    ;;
+esac

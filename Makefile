@@ -18,7 +18,7 @@ GITLEAKS ?= gitleaks
 
 .DEFAULT_GOAL := help
 
-.PHONY: help sync sync-core sync-hidden sync-bin sync-skills prepare switch apply reload-waybar toggle-waybar install-system-deps-arch install-system-deps-ubuntu26 status doctor secrets-check check
+.PHONY: help sync sync-core sync-hidden sync-bin sync-skills prepare switch apply switch-keyd rollback-keyd reload-waybar toggle-waybar install-system-deps-arch install-system-deps-ubuntu26 status doctor secrets-check check
 
 help: ## Show every available target and its purpose
 	@awk 'BEGIN { FS = ":.*## "; printf "Targets:\n" } /^[[:alnum:]_.-]+:.*## / { printf "  make %-34s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -29,6 +29,7 @@ sync-core: ## Copy Home Manager, desktop, terminal, and background files
 	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)/foot" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
 	cp "$(REPO_ROOT)/home.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/flake.nix" "$(HOME_MANAGER_DIR)/"
+	cp "$(REPO_ROOT)/keyd.nix" "$(HOME_MANAGER_DIR)/"
 	cp -r "$(REPO_ROOT)/niri" "$(CONFIG_DIR)/"
 	cp -r "$(REPO_ROOT)/waybar" "$(CONFIG_DIR)/"
 	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
@@ -81,6 +82,12 @@ apply: sync switch ## Sync files and apply the Home Manager configuration
 prepare: ## Bootstrap Home Manager from this repository with backups
 	nix $(NIX_FLAKE_FLAGS) run $(HOME_MANAGER_REF) -- switch -b backup --flake "path:$(REPO_ROOT)#vals"
 
+switch-keyd: ## Build and apply the Nix-managed keyd system service
+	"$(REPO_ROOT)/bin/keyd-system" switch
+
+rollback-keyd: ## Roll back the Nix-managed keyd system service one generation
+	"$(REPO_ROOT)/bin/keyd-system" rollback
+
 reload-waybar: ## Reload the running Waybar configuration and styles
 	"$(REPO_ROOT)/bin/reload-waybar"
 
@@ -109,6 +116,7 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 		test -z "$$undocumented" || { printf "undocumented Make targets:\n%s\n" "$$undocumented" >&2; exit 1; }
 	test -f "$(REPO_ROOT)/DEVELOPMENT.org"
 	test -f "$(REPO_ROOT)/home.nix"
+	test -f "$(REPO_ROOT)/keyd.nix"
 	test -f "$(REPO_ROOT)/niri/config.kdl"
 	test -f "$(REPO_ROOT)/waybar/config.jsonc"
 	test -f "$(REPO_ROOT)/waybar/style.css"
@@ -128,6 +136,8 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	test -f "$(REPO_ROOT)/bin/rssadd"
 	test -f "$(REPO_ROOT)/bin/rssget"
 	test -f "$(REPO_ROOT)/bin/toggle-waybar"
+	test -x "$(REPO_ROOT)/bin/keyd-system"
+	nix $(NIX_FLAKE_FLAGS) build --no-link "path:$(REPO_ROOT)#keyd-system"
 	niri validate -c "$(REPO_ROOT)/niri/config.kdl"
 	bash -n "$(REPO_ROOT)/bin/dev-session"
 	bash -n "$(REPO_ROOT)/bin/dev-loop"
@@ -138,9 +148,10 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	sh -n "$(REPO_ROOT)/bin/rssadd"
 	bash -n "$(REPO_ROOT)/bin/rssget"
 	bash -n "$(REPO_ROOT)/bin/toggle-waybar"
+	bash -n "$(REPO_ROOT)/bin/keyd-system"
 	bash -n "$(REPO_ROOT)/tests/dev-loop-test"
 	bash -n "$(REPO_ROOT)/tests/dev-session-test"
-	shellcheck "$(REPO_ROOT)/bin/dev-session" "$(REPO_ROOT)/bin/dev-loop" "$(REPO_ROOT)/bin/niri-ctl" "$(REPO_ROOT)/bin/install-system-deps-arch" "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(REPO_ROOT)/tests/dev-loop-test" "$(REPO_ROOT)/tests/dev-session-test"
+	shellcheck "$(REPO_ROOT)/bin/dev-session" "$(REPO_ROOT)/bin/dev-loop" "$(REPO_ROOT)/bin/niri-ctl" "$(REPO_ROOT)/bin/install-system-deps-arch" "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(REPO_ROOT)/bin/keyd-system" "$(REPO_ROOT)/tests/dev-loop-test" "$(REPO_ROOT)/tests/dev-session-test"
 	emacs --batch -Q --eval '(with-temp-buffer (insert-file-contents "$(REPO_ROOT)/.emacs") (emacs-lisp-mode) (check-parens))'
 	"$(REPO_ROOT)/tests/dev-loop-test"
 	"$(REPO_ROOT)/tests/dev-session-test"

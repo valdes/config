@@ -83,6 +83,7 @@
     ethtool
     pciutils # lspci
     usbutils # lsusb
+    keyd # system-wide key remapping CLI; daemon is deployed separately
 
     # dev
     git
