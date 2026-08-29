@@ -28,7 +28,7 @@
       space = "enter";
 
       # Modifiers
-      a = "layer(alt)";
+      # a = "layer(alt)";
       d = "layer(shift)";
     };
 
