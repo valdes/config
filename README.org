@@ -1,8 +1,8 @@
 * Config
 Personal Linux workstation configuration.
 
-The day-to-day coding loop is documented in [[file:DEVELOPMENT.org][DEVELOPMENT.org]].
-That guide also covers using =templates/agent-task.md= from an Obsidian vault.
+The day-to-day development setup is documented in
+[[file:DEVELOPMENT.org][DEVELOPMENT.org]].
 
 ** Workflow
 
@@ -160,50 +160,13 @@ Show repo status:
 
 ** Emacs and agents
 
-Emacs owns editing, navigation, diagnostics, compilation, and review. Agents run
-in the project's tmux session:
+Emacs owns editing, navigation, diagnostics, compilation, and review. Use
+=C-c x= to copy explicit context for an agent:
 
-#+begin_src sh :results output silent
-  dev-session ~/work/project
-  dev-session --launch ~/work/project
-#+end_src
-
-The session contains permanent =agent= and =shell= windows. Each isolated task
-adds a window named after its task slug. New and resumed task windows start in a
-read-only planning phase; implementation begins only after the operator reviews
-the plan, unlocks write access, and explicitly approves it.
-
-Emacs uses =C-c x= for explicit agent handoff:
-
-- =C-c x a= opens the project session in Ghostty.
 - =C-c x f= copies the current project-relative =file:line=.
 - =C-c x r= copies the selected region with file and line context.
-- =C-c x p= opens a personal task contract.
-- =C-c x j= opens a ticketed job task contract.
-- =C-c x s= archives and submits that contract to =dev-loop=.
 
-Project navigation remains under =C-c p=. Saving or closing a task buffer never
-submits it automatically. =Escape= deletes and cancels an unsubmitted draft;
-submitted contracts remain archived under =~/tasks/=.
-
-** niri-ctl
-
-The =bin/niri-ctl= helper supports environment overrides for application and
-project paths. Niri window rules own workspace and monitor placement.
-
-- =NIRI_CTL_PROJECTS_DIR=
-- =NIRI_CTL_TERMINAL=
-- =NIRI_CTL_EDITOR=
-- =NIRI_CTL_EMACSCLIENT=
-- =NIRI_CTL_DEV_SESSION=
-- =NIRI_CTL_BROWSER=
-
-Example:
-#+begin_src sh :results output silent
-  NIRI_CTL_PROJECTS_DIR="$HOME/src" \
-  NIRI_CTL_BROWSER=firefox \
-  niri-ctl project
-#+end_src
+Project navigation remains under =C-c p=.
 
 ** Notes
 
