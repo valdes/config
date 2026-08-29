@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, herdrPackage, ... }:
 
 {
   # Home Manager needs a bit of information about you and the
@@ -16,6 +16,7 @@
     wget
     curl
     tmux
+    herdrPackage
     nnn
     fastfetch
     tree
@@ -454,6 +455,7 @@
   xdg.configFile."xdg-terminals.list".text = ''
     foot.desktop
   '';
+  xdg.configFile."herdr/config.toml".source = ./herdr/config.toml;
 
   # Keep MIME associations mutable and change only the browser defaults.
   home.activation.setFirefoxDefault = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

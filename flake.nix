@@ -7,10 +7,14 @@
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    herdr = {
+      url = "github:herdrdev/herdr/v0.8.2";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     noctalia.url = "github:noctalia-dev/noctalia/cachix";
   };
 
-  outputs = { nixpkgs, home-manager, noctalia, ... }:
+  outputs = { nixpkgs, home-manager, herdr, noctalia, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -55,6 +59,7 @@
 
       homeConfigurations.vals = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
+        extraSpecialArgs.herdrPackage = herdr.packages.${system}.default;
         modules = [ noctalia.homeModules.default ./home.nix ];
       };
     };

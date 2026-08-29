@@ -26,7 +26,7 @@ help: ## Show every available target and its purpose
 sync: sync-core sync-hidden sync-bin sync-skills ## Copy repo-managed files and link shared agent skills into place
 
 sync-core: ## Copy Home Manager, desktop, terminal, and background files
-	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)/foot" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
+	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)/foot" "$(CONFIG_DIR)/herdr" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
 	cp "$(REPO_ROOT)/home.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/flake.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/keyd.nix" "$(HOME_MANAGER_DIR)/"
@@ -34,6 +34,7 @@ sync-core: ## Copy Home Manager, desktop, terminal, and background files
 	cp -r "$(REPO_ROOT)/waybar" "$(CONFIG_DIR)/"
 	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
 	cp "$(REPO_ROOT)/foot/foot.ini" "$(CONFIG_DIR)/foot/foot.ini"
+	cp "$(REPO_ROOT)/herdr/config.toml" "$(CONFIG_DIR)/herdr/config.toml"
 	cp "$(REPO_ROOT)/background.jpg" "$(BACKGROUND_DIR)/background.jpg"
 
 sync-hidden: ## Copy shell, editor, and Newsboat dotfiles
@@ -104,7 +105,7 @@ status: ## Show the concise Git working-tree status
 	git status --short
 
 doctor: ## Check that required workstation commands are available
-	@for cmd in home-manager cp install git glab emacs emacsclient tmux codex claude foot wl-copy wl-paste firefox keepassxc restic sops age age-keygen gitleaks mat2; do \
+	@for cmd in home-manager cp install git glab emacs emacsclient tmux herdr codex claude foot wl-copy wl-paste firefox keepassxc restic sops age age-keygen gitleaks mat2; do \
 		command -v "$$cmd" >/dev/null || { echo "missing: $$cmd"; exit 1; }; \
 	done
 
@@ -121,6 +122,7 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	test -f "$(REPO_ROOT)/waybar/config.jsonc"
 	test -f "$(REPO_ROOT)/waybar/style.css"
 	test -f "$(REPO_ROOT)/foot/foot.ini"
+	test -f "$(REPO_ROOT)/herdr/config.toml"
 	test -f "$(REPO_ROOT)/background.jpg"
 	test -f "$(REPO_ROOT)/urls"
 	test -x "$(REPO_ROOT)/bin/dev-session"
