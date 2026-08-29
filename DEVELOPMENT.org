@@ -37,7 +37,8 @@ Sessions are named =dev-<project>= and contain two permanent tmux windows:
 Each =dev-loop= task adds a window named after its task slug. The window closes
 when its agent exits and can be recreated with =dev-loop resume=.
 
-With the =C-x= tmux prefix, use =C-x a= for the agent and =C-x s= for the shell.
+With the =C-x= tmux prefix, use =C-x a= for the agent, =C-x S= for the shell,
+and =C-x s= to choose a session.
 
 ** Work in Emacs
 
