@@ -1,8 +1,10 @@
 * Development Workflow
 
 Emacs is the editing, navigation, diagnostics, compilation, and review surface.
-Use a regular terminal or tmux session for builds, tests, logs, Git commands,
-and agent CLIs.
+Use Foot with tmux or Herdr for builds, tests, logs, Git commands, and agent
+CLIs. The workflow is intentionally direct: choose the agent, model,
+permissions, and working directory in its CLI instead of using a repository
+wrapper.
 
 ** Work in Emacs
 
@@ -15,18 +17,66 @@ Project commands use Emacs's built-in =C-x p= prefix:
 - =C-x p c=: compile from the project root.
 - =C-x p k=: kill project buffers.
 
-Use =C-c g d= to review tracked changes against =HEAD= with Difftastic.
+Use =F10= for buffers, =Shift-F10= for recent files, =C-.= for contextual
+Embark actions, and =C-x g= for Magit. Completion uses Vertico, Consult,
+Corfu, Orderless, and Marginalia; project navigation stays on built-in
+=project.el= rather than a separate project wrapper.
 
-Java buffers use =java-ts-mode= when the Home Manager managed tree-sitter
-grammar is available. Eglot starts JDT LS directly; use standard Xref and Eglot
-commands for navigation and refactoring, and =C-x p c= for tests and builds.
+** Language and build support
 
-Git Gutter marks changed lines in file buffers. Use =C-c g p= and =C-c g n= to
-visit the previous or next hunk, and =C-c g h= to preview the current hunk.
-Magit refines changed words within every displayed diff hunk.
+Eglot starts the configured language servers for Java, C/C++, Zig, YAML, Nix,
+and Rust. Java buffers use =java-ts-mode= when the Home Manager-managed
+tree-sitter grammar is available and run JDT LS directly. Java projects also
+have Gradle and Maven tooling available, JDK 25 as =JAVA_HOME=, and explicit
+=JAVA_17_HOME= and =JAVA_25_HOME= paths.
 
-Use =F10= for buffers, =Shift+F10= for recent files, =C-.= for contextual
-Embark actions, and =C-x g= for Magit.
+Use standard Xref and Eglot commands for navigation and refactoring. Supported
+language buffers format through Eglot on save where configured. Run project
+builds and tests through =C-x p c= or directly in a terminal so the repository's
+native Make, Maven, Gradle, Nix, or other build interface remains visible.
+
+Useful terminal tools include =rg= and =fd= for search, =ast-grep= for
+structural search, =jq= and =yq= for structured data, =watchexec= for simple
+reruns, =difft= for readable diffs, =lazygit= and =lazydocker= for focused TUI
+work, and =mise= for project toolchain selection.
+
+** Review changes
+
+Use =C-c g d= to review tracked changes against =HEAD= with Difftastic. Git
+Gutter marks changed lines in file buffers:
+
+- =C-c g p=: visit the previous hunk.
+- =C-c g n=: visit the next hunk.
+- =C-c g h=: preview the current hunk.
+
+Magit refines changed words within every displayed diff hunk. Before applying
+workstation configuration, also inspect the terminal diff so copied files,
+generated references, and unrelated local changes are visible.
+
+** Terminal sessions
+
+Niri opens Foot with =Mod-T=. Use =Mod-Shift-T= for Herdr, whose prefix is
+=C-a=. Its main controls are:
+
+- =C-a c=: create a tab; =C-a p=/=C-a n=: previous/next tab.
+- =C-a 1..9=: select a tab.
+- =C-a h/j/k/l=: focus a pane.
+- =C-a |= and =C-a -=: split vertically or horizontally.
+- =C-a r=: enter resize mode; =C-a z=: zoom the active pane.
+- =C-a [=: copy mode; =C-a q=: detach; =C-a Shift-r=: reload config.
+
+tmux remains available for persistent or remote-friendly sessions. Its prefix
+is =C-x=:
+
+- =C-x |= and =C-x -=: split in the current pane's directory.
+- =C-x h/j/k/l=: select a pane; uppercase =H/J/K/L= resizes it.
+- =C-x C-h=/=C-x C-l=: select the previous/next window.
+- =C-x C-c=: copy the tmux buffer to Wayland; =C-x C-v=: paste from Wayland.
+- =C-x r=: reload =~/.tmux.conf=.
+
+tmux enables focus events, mouse support, a 50,000-line history, automatic
+window renumbering, and session restoration through TPM, tmux-resurrect, and
+tmux-continuum.
 
 ** Share context with agents
 
@@ -35,24 +85,45 @@ Use =C-c x= to copy explicit project context:
 - =C-c x f=: copy the current project-relative =file:line=.
 - =C-c x r=: copy the active region with its file and line range.
 
-Choose the agent, model, permissions, and working directory directly in the
-agent CLI rather than through a repository wrapper.
+Paste that context into Codex or Claude from a regular terminal, tmux, or Herdr
+session. Keep planning and implementation permissions explicit in the agent
+CLI; this repository no longer supplies custom agent-loop, session, or
+worktree wrappers.
+
+The repository-managed =manage-makefile= skill is linked into both agents'
+global skill directories by =make sync-skills= and by the Home Manager
+configuration.
 
 ** Maintain this configuration
 
-After editing the repository, validate it with:
+Inspect the command surface and prerequisites before changing the workstation:
+
+#+begin_src sh
+  make help
+  make doctor
+#+end_src
+
+After editing repository-managed configuration or scripts, run the narrowest
+relevant check followed by the repository check:
 
 #+begin_src sh
   make check
 #+end_src
 
-Review the final diff before applying the configuration. Only update the live
-home environment when intended:
+=make check= validates the Make interface and required files, builds the keyd
+package without switching it, validates Niri, checks shell syntax and
+ShellCheck-clean host scripts, and checks Emacs parentheses.
+
+Review the final diff before changing the live environment. Apply only when
+intended:
 
 #+begin_src sh
   make sync
   make switch
+  # or: make apply
 #+end_src
 
-=make sync= installs the repo-managed Emacs, tmux, Niri, helper configuration,
-and shared =manage-makefile= skill into the Codex and Claude skill directories.
+=make sync= copies the repo-managed Home Manager, Emacs, tmux, Niri, Foot,
+Herdr, Newsboat, helper commands, wallpaper, and shared skill files. =make
+switch= applies the repository flake. Neither command deploys keyd or changes
+host packages and services; those remain separate explicit operations.

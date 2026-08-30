@@ -1,57 +1,157 @@
 * Config
-Personal Linux workstation configuration.
+Personal Linux workstation configuration managed with Nix, Home Manager, and a
+small set of explicit host-level scripts.
 
 The day-to-day development setup is documented in
 [[file:DEVELOPMENT.org][DEVELOPMENT.org]].
 
-** Workflow
+** Ownership
 
-Bootstrap Home Manager with the repo flake:
+- =home.nix= owns user packages, program configuration, session variables,
+  Firefox policy, the declarative Noctalia base, and Home Manager links.
+- =niri/=, =foot/=, =herdr/=, the shell/editor files, and =urls= are copied by
+  =make sync=.
+- The host dependency scripts provision the session copies of Niri and
+  Noctalia plus networking, Bluetooth, audio, power, portals, and the firewall.
+  Home Manager supplies the matching user packages and configuration.
+- =keyd.nix= and =bin/keyd-system= own a separate root Nix profile for the keyd
+  daemon and its generated system configuration.
+- Noctalia keeps GUI changes in =~/.local/state/noctalia/settings.toml=; those
+  mutable values override the declarative defaults in =home.nix=.
+
+** Bootstrap and update workflow
+
+Install Niri, Noctalia, and the host services that intentionally remain outside
+Home Manager:
+
+#+begin_src sh :results output silent
+  make install-system-deps-arch
+  # or, on Ubuntu 26.04:
+  make install-system-deps-ubuntu26
+#+end_src
+
+Bootstrap Home Manager from the repository flake. Existing conflicting files
+are preserved with the =backup= suffix on this first activation:
+
 #+begin_src sh :results output silent
   make prepare
 #+end_src
 
-Check prerequisites for the non-bootstrap targets:
+Check that the expected workstation commands are available:
+
 #+begin_src sh :results output silent
   make doctor
 #+end_src
 
-Sync repo-managed files into place:
+The normal update cycle is:
+
 #+begin_src sh :results output silent
+  make check
   make sync
-#+end_src
-
-This also links the shared =manage-makefile= skill into the global Codex and
-Claude skill directories.
-
-Apply the Home Manager configuration:
-#+begin_src sh :results output silent
   make switch
 #+end_src
 
-Do both in one step:
+=make sync= copies repository-managed dotfiles and helper commands into their
+live locations. It also links the shared =manage-makefile= skill into the
+global Codex and Claude skill directories.
+
+=make switch= applies the Home Manager configuration directly from this
+repository through =nix run home-manager/master= and a =path:= flake reference.
+It does not require a prior copy into =~/.config/home-manager=.
+
+Run both operations together when the final diff has already been reviewed:
+
 #+begin_src sh :results output silent
   make apply
 #+end_src
 
+=make prepare=, =make sync=, =make switch=, and =make apply= do not install
+host packages, change the firewall, deploy keyd, or restart the Niri session.
+
+** Desktop workflow
+
+Niri uses stable workspace names instead of application-derived workspaces:
+
+| Key   | Workspace | Default role                        |
+|-------+-----------+-------------------------------------|
+| Mod-1 | =build=   | Primary editing and implementation  |
+| Mod-2 | =debug=   | Tests, logs, and debugging           |
+| Mod-3 | =review=  | Diffs, browsers, and review          |
+| Mod-4 | =ops=     | Operations and system tools          |
+| Mod-5 | =comm=    | Slack and communication              |
+| Mod-6 | =write=   | Notes and Obsidian                   |
+| Mod-7 | =scratch= | Temporary work on the laptop display |
+
+The horizontal 27-inch display is the focus canvas for =build=, =debug=, and
+=review=. The vertical display carries =ops=, =comm=, and =write=. The laptop
+display carries =scratch=. Use =Mod-Ctrl-1= through =Mod-Ctrl-7= to move the
+current column to a named workspace.
+
+Important desktop bindings:
+
+| Binding       | Action                           |
+|---------------+----------------------------------|
+| =Mod-T=       | Open Foot                        |
+| =Mod-Shift-T= | Open Herdr in Foot               |
+| =Mod-D=       | Toggle the Noctalia launcher     |
+| =Super-B=     | Toggle the Noctalia bar          |
+| =Mod-S=       | Open the Noctalia control center |
+| =Mod-Ctrl-V=  | Open clipboard history           |
+| =Super-Alt-L= | Lock the session                 |
+| =Mod-Shift-/= | Show Niri's full hotkey overlay  |
+
+Noctalia v5 owns the bar, launcher, wallpaper, notifications, clipboard
+history, lock screen, OSDs, and control center. Niri starts its daemon when the
+session begins. Foot is the default terminal, and Firefox is the default
+browser for HTML and HTTP(S) links.
+
+After applying desktop configuration, restart the Niri session when a setting
+cannot be reloaded in place. Useful diagnostics:
+
+#+begin_src sh :results output silent
+  niri validate -c niri/config.kdl
+  niri msg outputs
+  noctalia config validate
+  noctalia msg --help
+  journalctl --user -b | rg noctalia
+#+end_src
+
+The expected host services are NetworkManager, Bluetooth, UPower,
+power-profiles-daemon, PipeWire/WirePlumber, GNOME Keyring Secret Service,
+polkit, and an XDG desktop portal. Check the persistent and user services with:
+
+#+begin_src sh :results output silent
+  systemctl is-enabled NetworkManager bluetooth power-profiles-daemon ufw
+  systemctl --user status pipewire-pulse wireplumber
+#+end_src
+
 ** keyd
 
-Home Manager installs the =keyd= CLI. The system daemon and its generated
+Home Manager installs the =keyd= CLI. The daemon and generated
 =/etc/keyd/default.conf= are built from the structured mappings in =keyd.nix=
 and kept in a root Nix profile.
 
-Build and apply a new generation explicitly:
+Caps Lock sends Escape when tapped and activates the navigation/editing layer
+when held. Escape sends Caps Lock. The layer provides arrows, page movement,
+Home/End, Delete, Backspace, Enter, Tab, and Shift. The Caps-layer =a= mapping
+to Alt is intentionally disabled. AltGr retains the explicit accent and macro
+mappings defined in =keyd.nix=.
+
+Build and apply a generation explicitly:
+
 #+begin_src sh :results output silent
   make switch-keyd
 #+end_src
 
-The first switch preserves the existing configuration as
+The first switch preserves an existing configuration as
 =/etc/keyd/default.conf.pre-nix=. Roll back one generation with:
+
 #+begin_src sh :results output silent
   make rollback-keyd
 #+end_src
 
 Inspect the live service and generated configuration with:
+
 #+begin_src sh :results output silent
   systemctl status keyd
   readlink -f /etc/keyd/default.conf
@@ -62,55 +162,73 @@ If a bad mapping captures the keyboard, press =Backspace+Escape+Enter= to stop
 keyd. The distribution-provided keyd package can be removed after confirming
 that the service runs from the Nix profile.
 
-** Noctalia
+** Helper commands
 
-Noctalia v5 owns the shell surfaces around niri: bar, launcher, wallpaper,
-notifications, clipboard history, lock screen, OSDs, and the control center.
-Its declarative base configuration is in =home.nix=; GUI changes are stored
-by Noctalia in =~/.local/state/noctalia/settings.toml= and override that base.
-
-The host services remain distribution/systemd managed. The expected services are
-NetworkManager, Bluetooth, UPower, power-profiles-daemon, PipeWire/WirePlumber,
-GNOME Keyring Secret Service, polkit, and an XDG desktop portal. Check them
-with:
+=make sync-bin= installs =rssadd= and =rssget= into =~/.local/bin=. =rssadd=
+adds a URL and optional tags to the repository-managed Newsboat list, rejects
+duplicates, sorts the file, and updates the live =~/.newsboat/urls= copy.
+=rssget= discovers feeds from a URL or the Wayland clipboard, uses Fuzzel when
+several feeds are available, and delegates the selected feed to =rssadd=.
 
 #+begin_src sh :results output silent
-  systemctl is-enabled NetworkManager bluetooth power-profiles-daemon
-  systemctl --user status pipewire-pulse wireplumber
+  rssadd https://example.com/feed.xml "tech"
+  rssget https://example.com "tech"
+  rssget                         # use the current clipboard URL
 #+end_src
 
-Install Niri, Noctalia, and host dependencies that are intentionally outside
-Nix/Home Manager with the script matching the host distribution:
+=bin/cpu-throttle= is a repository-local Intel P-state utility; it is not
+installed by =make sync=. It uses sudo to switch to power-saver mode, disable
+Turbo Boost, and cap performance at 60 percent. Disable restores Turbo Boost,
+the 100 percent cap, and the balanced profile.
 
 #+begin_src sh :results output silent
-  ./bin/install-system-deps-arch
-  # or, on Ubuntu 26.04:
-  ./bin/install-system-deps-ubuntu26
+  ./bin/cpu-throttle status
+  ./bin/cpu-throttle enable
+  ./bin/cpu-throttle disable
 #+end_src
 
-Noctalia is started by niri after =make apply=; restart the niri session to
-complete the cutover.
+** Tool inventory
 
-Useful diagnostics:
+The workstation toolset is grouped below. User-level tools come from Home
+Manager unless the ownership notes above say otherwise.
 
-#+begin_src sh :results output silent
-  noctalia config validate
-  noctalia msg --help
-  journalctl --user -b | rg noctalia
-#+end_src
+- Shell and navigation: Zsh, Starship, direnv with nix-direnv, zoxide, tmux,
+  Herdr, nnn, fzf, plocate, tree, bat, eza, fd, ripgrep, ast-grep, jq, yq,
+  glow, tldr, and fastfetch.
+- Files, downloads, and archives: wget, curl, aria2, HTTPie, Curlie, file, zip,
+  xz, unzip, p7zip, zstd, GNU sed/tar/awk, and GnuPG.
+- Monitoring and diagnostics: htop, btop, ncdu, duf, iotop, iftop, sysstat,
+  lm_sensors, lsof, strace, ltrace, hyperfine, mtr, iperf3, dnsutils, ldns,
+  socat, nmap, ipcalc, ethtool, pciutils, and usbutils.
+- Development and review: Nix, Home Manager, Git, GitHub CLI, GitLab CLI,
+  Difftastic, GNU Make, ShellCheck, shfmt, watchexec, mise, lazygit,
+  lazydocker, Emacs, Neovim, VS Code, and Gum.
+- Language tooling: JDK 17 and 25, Maven, Gradle, Spring Boot CLI, JDT LS,
+  google-java-format, clang-tools, ZLS, yaml-language-server, nixd, and
+  rust-analyzer.
+- Documentation and media: Hugo, PlantUML, Graphviz, TeX Live, Obsidian, VLC,
+  Xournal++, Pinta, Flameshot, and LocalSend.
+- Privacy and secrets: Firefox, KeePassXC, age, SOPS, Restic, Gitleaks, MAT2,
+  and uBlock Origin plus KeePassXC-Browser Firefox extensions.
+- Desktop runtime: Niri, Noctalia, Foot, Fuzzel, wl-clipboard,
+  xwayland-satellite, keyd CLI, and the Symbols Nerd Font glyph set.
+- Small baseline utilities retained for direct use include =which=, =cowsay=,
+  and =nix-output-monitor=.
+
+The distribution-level installers add the desktop services, portals, audio and
+Bluetooth stack, accessibility support, EGL/Mesa dependencies, =ddcutil=, and
+UFW. They intentionally keep these host concerns outside Home Manager.
 
 ** Privacy baseline
 
-Home Manager installs Firefox, KeePassXC, Restic, SOPS with age, Gitleaks, and
-MAT2. Firefox is the default browser and installs uBlock Origin and
-KeePassXC-Browser from Mozilla Add-ons. In KeePassXC, enable =Browser
-Integration -> Firefox= once, then pair the extension with the unlocked
-database. KeePassXC owns its mutable settings and databases; Home Manager owns
-the package and native-messaging manifest.
+Firefox installs uBlock Origin and KeePassXC-Browser from Mozilla Add-ons. In
+KeePassXC, enable =Browser Integration -> Firefox= once, then pair the extension
+with the unlocked database. KeePassXC owns its mutable settings and databases;
+Home Manager owns the package and native-messaging manifest.
 
-Restic repositories are intentionally operator-selected. Initialize one on an
-external or remote mount, run a backup, verify it, and test a restore before
-depending on it:
+Restic repositories are operator-selected. Initialize one on an external or
+remote mount, run a backup, verify it, and test a restore before depending on
+it:
 
 #+begin_src sh :results output silent
   restic -r /mnt/backup/restic init
@@ -119,8 +237,8 @@ depending on it:
   restic -r /mnt/backup/restic restore latest --target /tmp/restic-restore
 #+end_src
 
-Do not put the repository password in this repository. Restic prompts for it
-when no password source is configured. Back up the password separately from the
+Do not put the repository password in this repository. Restic prompts when no
+password source is configured. Back the password up separately from the Restic
 repository.
 
 Create an age identity outside Git before adding SOPS-encrypted secrets to a
@@ -145,31 +263,20 @@ The host dependency installers configure UFW with default-deny inbound traffic,
 rate-limited SSH, and LocalSend on TCP/UDP port 53317. They preserve unrelated
 rules rather than resetting the firewall. Docker-published ports can bypass UFW;
 bind development services to loopback unless they are intentionally exposed.
-Neither =make switch= nor =make sync= changes the live firewall.
 
 VPN provider configuration, Tor routing, USBGuard, DNS proxies, and automated
 Restic credentials remain explicit operator choices rather than workstation
 defaults.
 
-** Day-to-Day
+** Maintenance
 
-Show repo status:
+Show the available repository operations and the current Git state with:
+
 #+begin_src sh :results output silent
+  make help
   make status
 #+end_src
 
-** Emacs and agents
-
-Emacs owns editing, navigation, diagnostics, compilation, and review. Use
-=C-c x= to copy explicit context for an agent:
-
-- =C-c x f= copies the current project-relative =file:line=.
-- =C-c x r= copies the selected region with file and line context.
-
-Project navigation remains under =C-c p=.
-
-** Notes
-
-- =make sync= installs the wallpaper to =~/.local/share/backgrounds/background.jpg=.
-- =make prepare= runs Home Manager directly from this repo using a =path:= flake reference and uses =-b backup= to preserve pre-existing conflicting files on first activation.
-- =make switch= runs =home-manager --impure switch=.
+Run =make check= after changing repository-managed configuration or scripts and
+review the final diff before applying it. Do not use =make sync= or =make
+switch= as validation commands: both change the live home environment.
