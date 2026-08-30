@@ -27,7 +27,6 @@
     eza # ls
     duf # du
     fd # find
-    mcfly # sh history navigator
     tldr # man
     hyperfine # command-line benchmarking tool
     fzf # A command-line fuzzy finder
@@ -104,7 +103,6 @@
     emacs
     nerd-fonts.symbols-only # icon glyphs used by doom-modeline/nerd-icons
     neovim
-    vimPlugins.LazyVim
     mise # manage dev environment
     lazygit
     lazydocker
@@ -145,7 +143,6 @@
     xournalpp # handwriting tool with pdf annotation support
     pinta # quick image editing
     foot
-    zellij
 
     # desktop runtime dependencies
     niri

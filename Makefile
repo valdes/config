@@ -26,12 +26,11 @@ help: ## Show every available target and its purpose
 sync: sync-core sync-hidden sync-bin sync-skills ## Copy repo-managed files and link shared agent skills into place
 
 sync-core: ## Copy Home Manager, desktop, terminal, and background files
-	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/alacritty" "$(CONFIG_DIR)/foot" "$(CONFIG_DIR)/herdr" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
+	install -d "$(HOME_MANAGER_DIR)" "$(CONFIG_DIR)/foot" "$(CONFIG_DIR)/herdr" "$(CONFIG_DIR)" "$(BACKGROUND_DIR)"
 	cp "$(REPO_ROOT)/home.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/flake.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/keyd.nix" "$(HOME_MANAGER_DIR)/"
 	cp -r "$(REPO_ROOT)/niri" "$(CONFIG_DIR)/"
-	cp "$(REPO_ROOT)/zenburn.toml" "$(CONFIG_DIR)/alacritty/alacritty.toml"
 	cp "$(REPO_ROOT)/foot/foot.ini" "$(CONFIG_DIR)/foot/foot.ini"
 	cp "$(REPO_ROOT)/herdr/config.toml" "$(CONFIG_DIR)/herdr/config.toml"
 	cp "$(REPO_ROOT)/background.jpg" "$(BACKGROUND_DIR)/background.jpg"
