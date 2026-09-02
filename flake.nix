@@ -53,13 +53,37 @@
         ln -s ${keydConfig} "$out/etc/keyd/default.conf"
         ln -s ${keydUnit} "$out/lib/systemd/system/keyd.service"
       '';
+      codexbarCli = pkgs.stdenvNoCC.mkDerivation {
+        pname = "codexbar-cli";
+        version = "0.56.3";
+        src = pkgs.fetchurl {
+          url = "https://github.com/steipete/CodexBar/releases/download/v0.56.3/CodexBarCLI-v0.56.3-linux-musl-x86_64.tar.gz";
+          hash = "sha256-YTYjbw8f8HJYuNTIyWTwr4uFSv+W1nCtCT6eL8c6q6M=";
+        };
+        sourceRoot = ".";
+        installPhase = ''
+          runHook preInstall
+          install -Dm755 CodexBarCLI "$out/bin/CodexBarCLI"
+          install -Dm644 VERSION "$out/bin/VERSION"
+          ln -s CodexBarCLI "$out/bin/codexbar"
+          cp -r CodexBar_CodexBarCore.bundle "$out/bin/"
+          runHook postInstall
+        '';
+        meta.mainProgram = "codexbar";
+      };
     in
     {
-      packages.${system}.keyd-system = keydSystem;
+      packages.${system} = {
+        keyd-system = keydSystem;
+        codexbar-cli = codexbarCli;
+      };
 
       homeConfigurations.vals = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        extraSpecialArgs.herdrPackage = herdr.packages.${system}.default;
+        extraSpecialArgs = {
+          herdrPackage = herdr.packages.${system}.default;
+          codexbarCliPackage = codexbarCli;
+        };
         modules = [ noctalia.homeModules.default ./home.nix ];
       };
     };

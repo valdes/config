@@ -1,4 +1,4 @@
-{ config, pkgs, lib, herdrPackage, ... }:
+{ config, pkgs, lib, herdrPackage, codexbarCliPackage, ... }:
 
 {
   # Home Manager needs a bit of information about you and the
@@ -107,6 +107,7 @@
     lazygit
     lazydocker
     gum # iteractive shell menu creation
+    codexbarCliPackage # AI coding-provider usage CLI
 
     # privacy and secret hygiene
     age
