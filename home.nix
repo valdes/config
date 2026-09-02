@@ -134,7 +134,8 @@
     # documentation
     plantuml
     graphviz
-    texlive.combined.scheme-full
+    (texliveSmall.withPackages (ps: [ ps.minted ]))
+    python3Packages.pygments
     obsidian
 
     # utils
