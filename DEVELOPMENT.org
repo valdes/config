@@ -25,10 +25,11 @@ Corfu, Orderless, and Marginalia; project navigation stays on built-in
 ** Language and build support
 
 Eglot starts the configured language servers for Java, C/C++, Zig, YAML, Nix,
-and Rust. Java buffers use =java-ts-mode= when the Home Manager-managed
-tree-sitter grammar is available and run JDT LS directly. Java projects also
-have Gradle and Maven tooling available, JDK 25 as =JAVA_HOME=, and explicit
-=JAVA_17_HOME= and =JAVA_25_HOME= paths.
+and Rust when their executables are available. Java buffers use =java-ts-mode=
+with the Home Manager-managed tree-sitter grammar, JDT LS, and
+=google-java-format=. Spring Boot CLI is also workstation-managed. Java
+runtimes, Maven, Gradle, and other project-specific Java tools are supplied
+through Mise rather than the workstation Nix profile.
 
 Use standard Xref and Eglot commands for navigation and refactoring. Supported
 language buffers format through Eglot on save where configured. Run project

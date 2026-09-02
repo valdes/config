@@ -11,6 +11,19 @@ readonly PACKAGES=(
   # Host services used by the Nix/Home Manager desktop configuration
   niri
   noctalia
+  fuzzel
+  wl-clipboard
+  xwayland-satellite
+  foot
+  keepassxc
+  obsidian
+  localsend
+  vlc
+  flameshot
+  xournalpp
+  pinta
+  shellcheck
+  go-yq
   networkmanager
   ufw
   bluez

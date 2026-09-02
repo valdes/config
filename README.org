@@ -7,13 +7,15 @@ The day-to-day development setup is documented in
 
 ** Ownership
 
-- =home.nix= owns user packages, program configuration, session variables,
-  Firefox policy, the declarative Noctalia base, and Home Manager links.
+- =home.nix= owns development and terminal packages, program configuration,
+  session variables, Firefox policy, the declarative Noctalia base, and Home
+  Manager links.
 - =niri/=, =foot/=, =herdr/=, the shell/editor files, and =urls= are copied by
   =make sync=.
-- The host dependency scripts provision the session copies of Niri and
-  Noctalia plus networking, Bluetooth, audio, power, portals, and the firewall.
-  Home Manager supplies the matching user packages and configuration.
+- The host dependency scripts provision GUI applications, the Niri desktop
+  runtime, networking, Bluetooth, audio, power, portals, and the firewall.
+  Home Manager supplies the matching configuration without duplicating those
+  packages in the Nix profile.
 - =keyd.nix= and =bin/keyd-system= own a separate root Nix profile for the keyd
   daemon and its generated system configuration.
 - Noctalia keeps GUI changes in =~/.local/state/noctalia/settings.toml=; those
@@ -21,8 +23,7 @@ The day-to-day development setup is documented in
 
 ** Bootstrap and update workflow
 
-Install Niri, Noctalia, and the host services that intentionally remain outside
-Home Manager:
+Install the distro-managed GUI applications, desktop runtime, and host services:
 
 #+begin_src sh :results output silent
   make install-system-deps-arch
@@ -189,11 +190,13 @@ the 100 percent cap, and the balanced profile.
 
 ** Tool inventory
 
-The workstation toolset is grouped below. User-level tools come from Home
-Manager unless the ownership notes above say otherwise.
+The workstation toolset is grouped below. Development and terminal tools come
+from Home Manager; GUI applications and desktop runtime packages come from the
+distribution installers unless noted otherwise.
 
 - Shell and navigation: Zsh, Starship, direnv with nix-direnv, zoxide, tmux,
-  Herdr, nnn, fzf, plocate, tree, bat, eza, fd, ripgrep, ast-grep, jq, yq,
+  Herdr, nnn, fzf, plocate, tree, bat, eza, fd, ripgrep, ast-grep, jq,
+  distro-managed yq,
   glow, tldr, and fastfetch.
 - Files, downloads, and archives: wget, curl, aria2, HTTPie, Curlie, file, zip,
   xz, unzip, p7zip, zstd, GNU sed/tar/awk, and GnuPG.
@@ -203,28 +206,30 @@ Manager unless the ownership notes above say otherwise.
 - Development and review: Nix, Home Manager, Git, GitHub CLI, GitLab CLI,
   Difftastic, GNU Make, ShellCheck, shfmt, watchexec, mise, lazygit,
   lazydocker, Emacs, Neovim, VS Code, and Gum.
-- Language tooling: JDK 17 and 25, Maven, Gradle, Spring Boot CLI, JDT LS,
-  google-java-format, clang-tools, ZLS, yaml-language-server, nixd, and
-  rust-analyzer.
-- Documentation and media: Hugo, PlantUML, Graphviz, TeX Live, Obsidian, VLC,
-  Xournal++, Pinta, Flameshot, and LocalSend.
-- Privacy and secrets: Firefox, KeePassXC, age, SOPS, Restic, Gitleaks, MAT2,
-  and uBlock Origin plus KeePassXC-Browser Firefox extensions.
-- Desktop runtime: Niri, Noctalia, Foot, Fuzzel, wl-clipboard,
-  xwayland-satellite, keyd CLI, and the Symbols Nerd Font glyph set.
-- Small baseline utilities retained for direct use include =which=, =cowsay=,
-  and =nix-output-monitor=.
+- Language tooling: JDT LS, google-java-format, Spring Boot CLI, clang-tools,
+  ZLS, yaml-language-server, nixd, and rust-analyzer. Java projects obtain their
+  JDK and build tools through Mise.
+- Documentation and media: Hugo, Graphviz, TeX Live, and the
+  distro-managed Obsidian, VLC, Xournal++, Pinta, Flameshot, and LocalSend.
+- Privacy and secrets: Firefox, distro-managed KeePassXC, age, SOPS, Restic,
+  Gitleaks, MAT2, and uBlock Origin plus KeePassXC-Browser Firefox extensions.
+- Desktop runtime: distro-managed Niri, Noctalia, Foot, Fuzzel, wl-clipboard,
+  and xwayland-satellite, plus the Nix-managed keyd CLI and Symbols Nerd Font
+  glyph set.
+- Small baseline utilities retained for direct use include =which= and =cowsay=.
 
-The distribution-level installers add the desktop services, portals, audio and
-Bluetooth stack, accessibility support, EGL/Mesa dependencies, =ddcutil=, and
-UFW. They intentionally keep these host concerns outside Home Manager.
+The distribution-level installers add the GUI applications, desktop runtime,
+services, portals, audio and Bluetooth stack, accessibility support, EGL/Mesa
+dependencies, =ddcutil=, and UFW. They intentionally keep these host concerns
+outside Home Manager.
 
 ** Privacy baseline
 
 Firefox installs uBlock Origin and KeePassXC-Browser from Mozilla Add-ons. In
 KeePassXC, enable =Browser Integration -> Firefox= once, then pair the extension
 with the unlocked database. KeePassXC owns its mutable settings and databases;
-Home Manager owns the package and native-messaging manifest.
+the distro owns the package and Home Manager owns the native-messaging
+manifest.
 
 Restic repositories are operator-selected. Initialize one on an external or
 remote mount, run a backup, verify it, and test a restore before depending on

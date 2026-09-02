@@ -58,12 +58,6 @@
     zstd
     gnupg
 
-    # nix related
-    #
-    # it provides the command `nom` works just like `nix`
-    # with more details log output
-    nix-output-monitor
-
     # productivity
     hugo # static site generator
     glow # markdown previewer in terminal
@@ -95,8 +89,6 @@
     curlie # curl
     ripgrep # recursively searches directories for a regex pattern
     ast-grep # structural code search and rewrite
-    yq-go # yaml processer https://github.com/mikefarah/yq
-    shellcheck # shell static analysis
     shfmt # shell formatter
     watchexec # rerun commands when files change
     gnumake
@@ -122,35 +114,14 @@
     yaml-language-server
     nixd
     rust-analyzer
-
-    # java / spring boot
-    jdk25
-    maven
-    gradle
     jdt-language-server
     google-java-format
     spring-boot-cli
 
     # documentation
-    plantuml
     graphviz
     (texliveSmall.withPackages (ps: [ ps.minted ]))
     python3Packages.pygments
-    obsidian
-
-    # utils
-    localsend   # AirDrop alternative
-    vlc
-    flameshot # screenshot tool
-    xournalpp # handwriting tool with pdf annotation support
-    pinta # quick image editing
-    foot
-
-    # desktop runtime dependencies
-    niri
-    fuzzel
-    wl-clipboard
-    xwayland-satellite
   ];
 
   fonts.fontconfig.enable = true;
@@ -184,12 +155,15 @@
       };
     };
 
-    # Keep the application settings mutable; Home Manager only owns the
-    # package and browser native-messaging manifest.
-    keepassxc.enable = true;
+    # Keep the application settings mutable and use the distro package.
+    keepassxc = {
+      enable = true;
+      package = null;
+    };
 
     noctalia = {
       enable = true;
+      package = null;
       systemd.enable = false;
 
       settings = {
@@ -435,9 +409,6 @@
 
   home.sessionVariables = {
     BROWSER = "firefox";
-    JAVA_HOME = "${pkgs.jdk25}";
-    JAVA_17_HOME = "${pkgs.jdk17.home}";
-    JAVA_25_HOME = "${pkgs.jdk25.home}";
     TERMINAL = "foot";
   };
 
@@ -455,11 +426,17 @@
 
   # copy dot files
   home.file.".config/foot/foot.ini".source = ./foot/foot.ini;
+  home.file.".mozilla/native-messaging-hosts/org.keepassxc.keepassxc_browser.json".text =
+    builtins.toJSON {
+      name = "org.keepassxc.keepassxc_browser";
+      description = "KeePassXC integration with native messaging support";
+      path = "/usr/bin/keepassxc-proxy";
+      type = "stdio";
+      allowed_extensions = [ "keepassxc-browser@keepassxc.org" ];
+    };
   home.file.".tmux.conf".source                       = ./.tmux.conf;
   home.file.".emacs.d/tree-sitter/libtree-sitter-java.so".source =
     "${pkgs.tree-sitter-grammars.tree-sitter-java}/parser";
-  home.file.".local/share/jdks/17".source = "${pkgs.jdk17.home}";
-  home.file.".local/share/jdks/25".source = "${pkgs.jdk25.home}";
   home.file.".agents/skills/manage-makefile" = {
     source = config.lib.file.mkOutOfStoreSymlink
       "${config.home.homeDirectory}/Github/config/skills/manage-makefile";

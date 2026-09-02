@@ -27,6 +27,16 @@ readonly PACKAGES=(
   # Host services used by the Nix/Home Manager desktop configuration
   niri
   noctalia
+  fuzzel
+  wl-clipboard
+  xwayland-satellite
+  foot
+  keepassxc
+  vlc
+  flameshot
+  xournalpp
+  shellcheck
+  snapd
   network-manager
   ufw
   bluez
@@ -87,6 +97,21 @@ printf 'Refreshing Ubuntu package indexes...\n'
 "${SUDO[@]}" apt-get update
 printf 'Installing Niri, Noctalia, and host dependencies on Ubuntu...\n'
 "${SUDO[@]}" apt-get install --no-install-recommends -y "${PACKAGES[@]}"
+
+printf 'Installing desktop applications from the Snap Store...\n'
+"${SUDO[@]}" systemctl enable --now snapd.socket
+if ! "${SUDO[@]}" snap list obsidian >/dev/null 2>&1; then
+  "${SUDO[@]}" snap install obsidian --classic
+fi
+if ! "${SUDO[@]}" snap list localsend >/dev/null 2>&1; then
+  "${SUDO[@]}" snap install localsend
+fi
+if ! "${SUDO[@]}" snap list pinta >/dev/null 2>&1; then
+  "${SUDO[@]}" snap install pinta
+fi
+if ! "${SUDO[@]}" snap list yq >/dev/null 2>&1; then
+  "${SUDO[@]}" snap install yq
+fi
 
 printf 'Enabling system services...\n'
 "${SUDO[@]}" systemctl enable --now NetworkManager.service
