@@ -125,6 +125,7 @@ intended:
 #+end_src
 
 =make sync= copies the repo-managed Home Manager, Emacs, tmux, Niri, Foot,
-Herdr, Newsboat, helper commands, wallpaper, and shared skill files. =make
-switch= applies the repository flake. Neither command deploys keyd or changes
-host packages and services; those remain separate explicit operations.
+Herdr, Newsboat, helper commands, wallpaper, avatar image, and shared skill
+files. =make switch= applies the repository flake. Neither command deploys
+keyd or changes host packages and services; those remain separate explicit
+operations.

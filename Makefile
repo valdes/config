@@ -34,6 +34,7 @@ sync-core: ## Copy Home Manager, desktop, terminal, and background files
 	cp "$(REPO_ROOT)/foot/foot.ini" "$(CONFIG_DIR)/foot/foot.ini"
 	cp "$(REPO_ROOT)/herdr/config.toml" "$(CONFIG_DIR)/herdr/config.toml"
 	cp "$(REPO_ROOT)/background.jpg" "$(BACKGROUND_DIR)/background.jpg"
+	cp "$(REPO_ROOT)/avatar.png" "$(HOME_DIR)/.face"
 
 sync-hidden: ## Copy shell, editor, and Newsboat dotfiles
 	cp "$(REPO_ROOT)/.emacs" "$(HOME_DIR)/"
@@ -109,6 +110,7 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	test -f "$(REPO_ROOT)/foot/foot.ini"
 	test -f "$(REPO_ROOT)/herdr/config.toml"
 	test -f "$(REPO_ROOT)/background.jpg"
+	test -f "$(REPO_ROOT)/avatar.png"
 	test -f "$(REPO_ROOT)/urls"
 	test -f "$(REPO_ROOT)/skills/manage-makefile/SKILL.md"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-arch"

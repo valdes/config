@@ -174,6 +174,7 @@
           clipboard_enabled = true;
           clipboard_history_max_entries = 20;
           launch_apps_as_systemd_services = false;
+          avatar_path = "${config.home.homeDirectory}/.face";
         };
 
         storage.key_source = "secret-service";
