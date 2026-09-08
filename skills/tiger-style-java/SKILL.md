@@ -1,0 +1,103 @@
+---
+name: tiger-style-java
+description: |
+  Apply Tiger Style safety, predictability, and performance guidelines to Java 21+ codebases.
+  Enforces bounded limits, pre-allocations, sealed Result patterns, and explicit runtime validations.
+---
+
+# Tiger Style for Java
+
+This skill guides the implementation of Java 21+ applications under the strict safety and performance standards of Tiger Style. It ensures zero technical debt, predictable memory consumption, robust defensive tripwires, and modern Data-Oriented Programming (DOP) structures.
+
+## When to Use
+
+Adhere to this skill when:
+- Designing low-latency, high-throughput, or safety-critical backend systems in Java.
+- Writing data processing pipelines, financial ledger transaction loops, or network-bound systems.
+- Reviewing PRs or refactoring Java modules to guarantee robustness and deterministic execution.
+
+---
+
+## Rules of Engagement
+
+### Rule 1: Bounded Everything (No Unbounded Queues or Loops)
+- **Queues**: Never use unbounded queues (like `LinkedBlockingQueue` without capacity). Prefer `ArrayBlockingQueue` or ring-buffer architectures.
+- **Collections**: Initialize collections (`ArrayList`, `HashMap`, `HashSet`) with a fixed, known capacity when the size is bounded.
+- **Loops**: Every `while` loop or dynamic `for` loop must have a hard-coded maximum iteration limit (safety governor) to prevent infinite-loop lockups.
+
+### Rule 2: Garbage-Free Critical Path (Static & Bounded Allocations)
+- Inside performance-sensitive code or hot execution loops, do not allocate short-lived objects on the heap.
+- Prefer primitive types (`long`, `double`, `int`) and native flat arrays instead of boxed wrapper classes (`Long`, `Double`, `Integer`) to prevent cache misses (pointer chasing) and object churn.
+- Reuse static or thread-local byte buffers (`ByteBuffer.allocateDirect()`) or reusable object pools for heavy data carriers.
+
+### Rule 3: Expected Failures are Data (The Result Pattern)
+- Throwing exceptions is only allowed for **unrecoverable programmer errors** or **system failures** (e.g., database connection lost, thread interrupted, assertions broken).
+- All expected business logic failures (e.g., `AccountNotFound`, `InsufficientFunds`, `InvalidPayload`) must return a sealed `Result` interface.
+
+```java
+public sealed interface Result<S, F> {
+    record Success<S, F>(S value) implements Result<S, F> {}
+    record Failure<S, F>(F error) implements Result<S, F> {}
+}
+```
+
+### Rule 4: Data-Oriented Programming (DOP) & Exhaustive Matches
+- Model all domain data carriers as immutable `record` types.
+- Model domain choices and states using `sealed interface` hierarchies.
+- Handle state transitions using exhaustive pattern-matching `switch` expressions. Avoid imperative `if (obj instanceof X)` blocks.
+
+### Rule 5: Defense-In-Depth Explicit Runtime Validation
+- Use Java `assert` blocks only for non-critical developer assumptions that can be stripped in production.
+- Use explicit runtime guard clauses (e.g., `Objects.requireNonNull()`, `Preconditions.checkArgument()`, `Validate.isTrue()`) for invariants that must be enforced in production.
+- Assert both the **positive space** (expected state) and the **negative space** (asserting that invalid states are unreachable, e.g., the `default -> throw new IllegalStateException()` branch in an exhaustive switch).
+
+### Rule 6: Big-Endian Explicit Naming
+- Variable and method names must flow from most-significant category to least-significant qualifier.
+- Names representing physical quantities must explicitly state their units at the end of the name.
+  - *Correct*: `balanceCents`, `timeoutMs`, `bufferCapacityBytes`, `requestCountMax`.
+  - *Incorrect*: `int ms;`, `long t;`, `int maxRequests;`.
+- Use standard Java camelCase for fields and methods, but preserve the Big-Endian sorting logic.
+
+---
+
+## Code Templates & Idioms
+
+### Bounded Buffer Loop Template
+```java
+public final class RingBufferProcessor {
+    private static final int ITERATION_LIMIT = 10_000;
+    private final ArrayBlockingQueue<Transaction> queue = new ArrayBlockingQueue<>(1024);
+
+    public void drainAndProcess() {
+        int processedCount = 0;
+        Transaction tx;
+        // Strict guard to prevent infinite lock-up
+        while (processedCount < ITERATION_LIMIT && (tx = queue.poll()) != null) {
+            processTransaction(tx);
+            processedCount++;
+        }
+        
+        if (processedCount >= ITERATION_LIMIT) {
+            throw new IllegalStateException("Safety governor limit hit: processed " + ITERATION_LIMIT + " txs");
+        }
+    }
+}
+```
+
+### ArchUnit Architecture Verification
+```java
+@AnalyzeClasses(packages = "com.tigerstyle.demo", importOptions = ImportOption.DoNotIncludeTests.class)
+public class TigerStyleArchTest {
+
+    @ArchTest
+    public static final ArchRule no_thrown_business_exceptions =
+        methods().that().arePublic().and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Service")
+        .should().notDeclareThrowableOfType(Throwable.class)
+        .as("Public service methods must return Result types instead of throwing exceptions");
+
+    @ArchTest
+    public static final ArchRule numeric_fields_must_have_explicit_units =
+        fields().should(haveExplicitUnitsSuffix)
+        .as("All quantitative primitive numeric fields must specify explicit unit suffixes (e.g. balanceCents, timeoutMs)");
+}
+```

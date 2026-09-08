@@ -11,7 +11,7 @@ HOME_MANAGER_DIR := $(CONFIG_DIR)/home-manager
 SKILLS_DIR := $(REPO_ROOT)/skills
 CODEX_SKILLS_DIR := $(HOME_DIR)/.agents/skills
 CLAUDE_SKILLS_DIR := $(HOME_DIR)/.claude/skills
-MANAGED_SKILLS := manage-makefile
+MANAGED_SKILLS := manage-makefile tiger-style-java
 HOME_MANAGER_REF ?= home-manager/master
 NIX_FLAKE_FLAGS := --extra-experimental-features "nix-command flakes"
 GITLEAKS ?= gitleaks
@@ -113,6 +113,7 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	test -f "$(REPO_ROOT)/avatar.png"
 	test -f "$(REPO_ROOT)/urls"
 	test -f "$(REPO_ROOT)/skills/manage-makefile/SKILL.md"
+	test -f "$(REPO_ROOT)/skills/tiger-style-java/SKILL.md"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-arch"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
 	test -f "$(REPO_ROOT)/bin/rssadd"

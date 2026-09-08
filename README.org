@@ -53,8 +53,8 @@ The normal update cycle is:
 #+end_src
 
 =make sync= copies repository-managed dotfiles and helper commands into their
-live locations. It also links the shared =manage-makefile= skill into the
-global Codex and Claude skill directories.
+live locations. It also links the shared =manage-makefile= and
+=tiger-style-java= skills into the global Codex and Claude skill directories.
 
 =make switch= applies the Home Manager configuration directly from this
 repository through =nix run home-manager/master= and a =path:= flake reference.
