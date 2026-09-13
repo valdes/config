@@ -20,10 +20,12 @@ Adhere to this skill when:
 
 ## Rules of Engagement
 
-### Rule 1: Bounded Everything (No Unbounded Queues or Loops)
+### Rule 1: Bounded Everything (No Unbounded Queues, Loops, Recursion, or I/O)
 - **Queues**: Never use unbounded queues (like `LinkedBlockingQueue` without capacity). Prefer `ArrayBlockingQueue` or ring-buffer architectures.
 - **Collections**: Initialize collections (`ArrayList`, `HashMap`, `HashSet`) with a fixed, known capacity when the size is bounded.
 - **Loops**: Every `while` loop or dynamic `for` loop must have a hard-coded maximum iteration limit (safety governor) to prevent infinite-loop lockups.
+- **Recursion**: Unbounded recursion is the same lockup risk as an unbounded loop, aimed at the stack instead of the heap. Prefer iteration; where recursion is unavoidable, thread through and enforce an explicit depth counter with a hard-coded maximum.
+- **I/O**: Every blocking network or disk call must carry an explicit deadline (e.g., a `Duration` passed to the client, or `Socket.setSoTimeout()`). Never call a blocking operation that can wait forever.
 
 ### Rule 2: Garbage-Free Critical Path (Static & Bounded Allocations)
 - Inside performance-sensitive code or hot execution loops, do not allocate short-lived objects on the heap.
@@ -64,6 +66,21 @@ public sealed interface Result<S, F> {
   - *Correct*: `balanceCents`, `timeoutMs`, `bufferCapacityBytes`, `requestCountMax`.
   - *Incorrect*: `int ms;`, `long t;`, `int maxRequests;`.
 - Use standard Java camelCase for fields and methods, but preserve the Big-Endian sorting logic.
+
+### Rule 7: Small, Reviewable Functions
+- A method body must not exceed **70 lines**. If it does, extract named helper methods rather than growing the method.
+- Keep a single level of abstraction per method: a method that orchestrates steps should call out to helpers, not mix orchestration with low-level detail.
+- Limit nesting depth to **3 levels** (e.g., `if` inside `for` inside `if`). Prefer early returns and guard clauses over deep nesting.
+
+### Rule 8: Overflow-Checked Arithmetic
+- Never use raw `+`, `-`, `*` on `int`/`long` quantities that represent money, counts, or capacities — silent overflow corrupts state without a crash.
+- Use `Math.addExact()`, `Math.subtractExact()`, `Math.multiplyExact()`, `Math.toIntExact()`, etc., so overflow throws `ArithmeticException` (a system failure per Rule 3) instead of wrapping silently.
+- Prefer `long` over `int` for any accumulator that can grow with input size or over the lifetime of a process.
+
+### Rule 9: Deterministic & Property-Based Testing
+- Every negative-space assertion from Rule 5 (an "unreachable" state) must be exercised by a test that proves it is either truly unreachable or correctly rejected — an assertion nobody tests is a guess, not a guarantee.
+- Prefer property-based tests (e.g., [jqwik](https://jqwik.net/)) over hand-picked example tests for validating invariants (e.g., "balance never goes negative") across a wide, randomized input space.
+- Seed all randomized tests explicitly and log the seed on failure, so a failing case is deterministically reproducible.
 
 ---
 
@@ -132,3 +149,43 @@ public class TigerStyleArchTest {
         .as("All quantitative primitive numeric fields must specify explicit unit suffixes (e.g. balanceCents, timeoutMs)");
 }
 ```
+
+### Checkstyle Enforcement (Function Size & Nesting — Rule 7)
+ArchUnit inspects compiled bytecode metadata, not source line counts or brace nesting, so line-length and nesting-depth limits belong in Checkstyle instead:
+```xml
+<module name="TreeWalker">
+    <module name="MethodLength">
+        <property name="max" value="70"/>
+        <property name="countEmpty" value="false"/>
+    </module>
+    <module name="NestedIfDepth">
+        <property name="max" value="3"/>
+    </module>
+    <module name="NestedForDepth">
+        <property name="max" value="3"/>
+    </module>
+    <module name="NestedTryDepth">
+        <property name="max" value="3"/>
+    </module>
+</module>
+```
+
+### Property-Based Invariant Test (Rule 9)
+```java
+class LedgerProperties {
+
+    @Property
+    void balanceNeverGoesNegative(@ForAll @LongRange(min = 0, max = 1_000_000) long openingBalanceCents,
+                                   @ForAll @LongRange(min = 0, max = 1_000_000) long withdrawalCents) {
+        LongResult<WithdrawalError> result = Ledger.withdraw(openingBalanceCents, withdrawalCents);
+
+        switch (result) {
+            case LongResult.Success<WithdrawalError> success ->
+                assertThat(success.value()).isGreaterThanOrEqualTo(0L);
+            case LongResult.Failure<WithdrawalError> failure ->
+                assertThat(failure.error()).isEqualTo(WithdrawalError.INSUFFICIENT_FUNDS);
+        }
+    }
+}
+```
+A failing case prints its seed in the jqwik report; rerun with `@Seed("<value>")` on the method to reproduce it deterministically.
