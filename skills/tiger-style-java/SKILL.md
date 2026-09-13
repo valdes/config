@@ -28,7 +28,14 @@ Adhere to this skill when:
 ### Rule 2: Garbage-Free Critical Path (Static & Bounded Allocations)
 - Inside performance-sensitive code or hot execution loops, do not allocate short-lived objects on the heap.
 - Prefer primitive types (`long`, `double`, `int`) and native flat arrays instead of boxed wrapper classes (`Long`, `Double`, `Integer`) to prevent cache misses (pointer chasing) and object churn.
-- Reuse static or thread-local byte buffers (`ByteBuffer.allocateDirect()`) or reusable object pools for heavy data carriers.
+- Allocate direct byte buffers (`ByteBuffer.allocateDirect()`) or object pools **once**, at startup, into a static or thread-local field, then reuse that same instance on every call — never invoke `allocateDirect()` from inside the hot path itself.
+- The generic `Result<S, F>` from Rule 3 forces boxing of primitive payloads (a `long` balance becomes a `Long`). On a genuine hot path, prefer a primitive-specialized result instead of the boxed generic form, e.g.:
+```java
+public sealed interface LongResult<F> {
+    record Success<F>(long value) implements LongResult<F> {}
+    record Failure<F>(F error) implements LongResult<F> {}
+}
+```
 
 ### Rule 3: Expected Failures are Data (The Result Pattern)
 - Throwing exceptions is only allowed for **unrecoverable programmer errors** or **system failures** (e.g., database connection lost, thread interrupted, assertions broken).
@@ -76,8 +83,10 @@ public final class RingBufferProcessor {
             processTransaction(tx);
             processedCount++;
         }
-        
-        if (processedCount >= ITERATION_LIMIT) {
+
+        // Only trip the governor if the limit stopped the loop AND work is still
+        // pending. Reaching the limit exactly as the queue drains is not an overrun.
+        if (processedCount >= ITERATION_LIMIT && !queue.isEmpty()) {
             throw new IllegalStateException("Safety governor limit hit: processed " + ITERATION_LIMIT + " txs");
         }
     }
@@ -89,11 +98,33 @@ public final class RingBufferProcessor {
 @AnalyzeClasses(packages = "com.tigerstyle.demo", importOptions = ImportOption.DoNotIncludeTests.class)
 public class TigerStyleArchTest {
 
+    // Note: this only catches declared checked-exception `throws` clauses.
+    // It cannot see unchecked exceptions thrown without being declared, so
+    // pair it with a code review checklist item, not rely on it alone.
     @ArchTest
     public static final ArchRule no_thrown_business_exceptions =
         methods().that().arePublic().and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Service")
         .should().notDeclareThrowableOfType(Throwable.class)
         .as("Public service methods must return Result types instead of throwing exceptions");
+
+    private static final Set<String> UNIT_SUFFIXES =
+        Set.of("Ms", "Ns", "Bytes", "Cents", "Max", "Min", "Count");
+
+    private static final ArchCondition<JavaField> haveExplicitUnitsSuffix =
+        new ArchCondition<>("have an explicit unit suffix") {
+            @Override
+            public void check(JavaField field, ConditionEvents events) {
+                boolean isQuantitativePrimitive = field.getRawType().isEquivalentTo(long.class)
+                    || field.getRawType().isEquivalentTo(int.class)
+                    || field.getRawType().isEquivalentTo(double.class);
+                if (!isQuantitativePrimitive) {
+                    return;
+                }
+                boolean hasUnitSuffix = UNIT_SUFFIXES.stream().anyMatch(field.getName()::endsWith);
+                events.add(new SimpleConditionEvent(field, hasUnitSuffix,
+                    "Field " + field.getFullName() + " does not declare an explicit unit suffix"));
+            }
+        };
 
     @ArchTest
     public static final ArchRule numeric_fields_must_have_explicit_units =
