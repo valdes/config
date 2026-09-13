@@ -14,7 +14,9 @@ is_url() {
 	printf '%s\n' "$1" | grep -Eq '^https?://[^[:space:]]+$'
 }
 
+# shellcheck disable=SC1007 # CDPATH= intentionally precedes cd to disable it
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+# shellcheck disable=SC1007 # CDPATH= intentionally precedes cd to disable it
 REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 MANAGED_RSSFILE="$REPO_ROOT/urls"
 LIVE_RSSFILE="$HOME/.newsboat/urls"

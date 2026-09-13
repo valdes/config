@@ -119,6 +119,7 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	test -f "$(REPO_ROOT)/bin/rssadd"
 	test -f "$(REPO_ROOT)/bin/rssget"
 	test -x "$(REPO_ROOT)/bin/keyd-system"
+	test -x "$(REPO_ROOT)/bin/cpu-throttle"
 	nix $(NIX_FLAKE_FLAGS) build --no-link "path:$(REPO_ROOT)#keyd-system"
 	niri validate -c "$(REPO_ROOT)/niri/config.kdl"
 	bash -n "$(REPO_ROOT)/bin/install-system-deps-arch"
@@ -126,5 +127,6 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	sh -n "$(REPO_ROOT)/bin/rssadd"
 	bash -n "$(REPO_ROOT)/bin/rssget"
 	bash -n "$(REPO_ROOT)/bin/keyd-system"
-	shellcheck "$(REPO_ROOT)/bin/install-system-deps-arch" "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(REPO_ROOT)/bin/keyd-system"
+	bash -n "$(REPO_ROOT)/bin/cpu-throttle"
+	shellcheck "$(REPO_ROOT)/bin/install-system-deps-arch" "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(REPO_ROOT)/bin/keyd-system" "$(REPO_ROOT)/bin/rssadd" "$(REPO_ROOT)/bin/rssget" "$(REPO_ROOT)/bin/cpu-throttle"
 	emacs --batch -Q --eval '(with-temp-buffer (insert-file-contents "$(REPO_ROOT)/.emacs") (emacs-lisp-mode) (check-parens))'

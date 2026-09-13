@@ -91,9 +91,9 @@ session. Keep planning and implementation permissions explicit in the agent
 CLI; this repository no longer supplies custom agent-loop, session, or
 worktree wrappers.
 
-The repository-managed =manage-makefile= skill is linked into both agents'
-global skill directories by =make sync-skills= and by the Home Manager
-configuration.
+The repository-managed =manage-makefile= and =tiger-style-java= skills are
+linked into both agents' global skill directories by =make sync-skills= and by
+the Home Manager configuration.
 
 ** Maintain this configuration
 
