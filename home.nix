@@ -172,7 +172,7 @@
           telemetry_enabled = false;
           polkit_agent = true;
           clipboard_enabled = true;
-          clipboard_history_max_entries = 20;
+          clipboard_history_max_entries = 100;
           launch_apps_as_systemd_services = false;
           avatar_path = "${config.home.homeDirectory}/.face";
         };
@@ -184,6 +184,12 @@
           source = "custom";
           custom_palette = "Zenburn";
         };
+
+        nightlight.enabled = true;
+        location.address = "Madrid, Spain";
+
+        plugins.enabled = [ "salemsayed/codexbar-meter" ];
+        widget.bar.type = "salemsayed/codexbar-meter:bar";
 
         wallpaper = {
           enabled = true;
@@ -212,6 +218,12 @@
           action = "screen_off";
         };
 
+        # A single bar definition renders on every connected output. Noctalia
+        # has no reliable "only on monitor X" filter: when a bar's `monitor`
+        # list matches zero currently-connected outputs (e.g. laptop-only,
+        # undocked) it falls back to rendering on every output instead of
+        # hiding, so a second monitor-scoped bar duplicates onto whatever is
+        # actually connected. One shared definition avoids that entirely.
         bar.main = {
           position = "top";
           thickness = 26;
@@ -224,9 +236,13 @@
           shadow = false;
           capsule = false;
           reserve_space = true;
-          start = [ "workspaces" ];
-          center = [ "clock" ];
+          start = [ "workspaces" "cpu" "ram" "temp" ];
+          # Grouped as one tight cluster around the clock instead of spread
+          # to the far edge, so the bar doesn't leave big empty gaps on the
+          # narrow rotated monitor.
+          center = [ "caffeine" "notifications" "clock" "weather" ];
           end = [
+            "bar"
             "tray"
             "keyboard_layout"
             "network"
@@ -246,9 +262,20 @@
           hide_when_empty = false;
         };
         widget.clock = {
-          format = "{:%A %H:%M}";
-          tooltip_format = "{:%d %B W%V %Y}";
+          format = "{:%a %d %b  %H:%M}";
+          tooltip_format = "{:%F  W%V}";
         };
+        widget.cpu = { type = "sysmon"; stat = "cpu_usage"; };
+        widget.ram = { type = "sysmon"; stat = "ram_used"; };
+        widget.temp = { type = "sysmon"; stat = "cpu_temp"; };
+        widget.caffeine.type = "caffeine";
+        widget.notifications.type = "notifications";
+        widget.weather = {
+          type = "weather";
+          show_temperature = false;
+          show_condition = false;
+        };
+        widget.tray.drawer = true;
         widget.network.show_label = false;
         widget.bluetooth.show_label = false;
         widget.volume.show_label = false;
