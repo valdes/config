@@ -188,7 +188,7 @@
         nightlight.enabled = true;
         location.address = "Madrid, Spain";
 
-        plugins.enabled = [ "salemsayed/codexbar-meter" ];
+        plugins.enabled = [ "salemsayed/codexbar-meter" "thepunkoff/pomodoro" ];
         widget.bar.type = "salemsayed/codexbar-meter:bar";
 
         wallpaper = {
@@ -240,7 +240,7 @@
           # Grouped as one tight cluster around the clock instead of spread
           # to the far edge, so the bar doesn't leave big empty gaps on the
           # narrow rotated monitor.
-          center = [ "caffeine" "notifications" "clock" "weather" ];
+          center = [ "caffeine" "notifications" "clock" "weather" "thepunkoff/pomodoro:widget" ];
           end = [
             "bar"
             "tray"
