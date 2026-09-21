@@ -100,6 +100,7 @@
     lazydocker
     gum # iteractive shell menu creation
     codexbarCliPackage # AI coding-provider usage CLI
+    sloc # count source lines of code
 
     # privacy and secret hygiene
     age
