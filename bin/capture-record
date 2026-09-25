@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly unit=desktop-capture-record.service
+
+fail() {
+  printf '%s\n' "$1" >&2
+  notify-send 'Recording failed' "$1" || true
+  exit 1
+}
+
+# The transient unit owns the recorder, so stopping it cannot affect OBS or
+# recorders launched elsewhere. This worker also reports asynchronous errors.
+if [[ "${1:-}" == --run && $# == 3 ]]; then
+  trap ':' INT TERM
+  notify-send 'Recording started' 'Press Mod+Alt+Print to stop.' || true
+  status=0
+  wf-recorder -g "$2" -r 30 -c libx264 -x yuv420p -f "$3" || status=$?
+  if (( status != 0 )); then
+    fail "Recorder exited with status $status. See journalctl --user -u $unit."
+  fi
+  [[ -s "$3" ]] || fail 'The recorder produced no video.'
+  notify-send 'Recording saved' "$3" || true
+  exit 0
+fi
+[[ $# == 0 ]] || fail 'Usage: capture-record'
+
+for cmd in flock systemctl systemd-run slurp wf-recorder xdg-user-dir notify-send; do
+  command -v "$cmd" >/dev/null || fail "Missing command: $cmd (run the host dependency installer)."
+done
+[[ -n "${XDG_RUNTIME_DIR:-}" && -d "$XDG_RUNTIME_DIR" ]] || fail 'Run this command inside your graphical session.'
+exec 9>"$XDG_RUNTIME_DIR/desktop-capture-record.lock"
+flock -n 9 || exit 0
+
+state=$(systemctl --user show "$unit" --property=ActiveState --value) || fail 'Could not query the user service manager.'
+case "$state" in
+  active|activating|deactivating)
+    systemctl --user stop "$unit" || fail 'The recorder did not stop; inspect its journal before retrying.'
+    exit 0
+    ;;
+esac
+
+selection=$(slurp) || exit 0
+[[ -n "$selection" ]] || exit 0
+videos=$(xdg-user-dir VIDEOS) || fail 'Could not locate the Videos directory.'
+[[ -n "$videos" ]] || fail 'The Videos directory is not configured.'
+mkdir -p "$videos/Recordings"
+file="$videos/Recordings/Recording-$(date +%Y-%m-%d_%H-%M-%S-%N).mp4"
+systemctl --user reset-failed "$unit" 2>/dev/null || true
+systemd-run --user --collect --unit="$unit" --service-type=exec \
+  --property=KillSignal=SIGINT --property=TimeoutStopSec=30s \
+  --property=SendSIGKILL=no --property=PartOf=graphical-session.target \
+  --setenv="PATH=$PATH" --setenv="WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0}" \
+  -- "$(readlink -f "$0")" --run "$selection" "$file" 9>&- \
+  || fail 'Could not start the recorder service.'

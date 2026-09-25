@@ -20,6 +20,15 @@ readonly PACKAGES=(
   localsend
   vlc
   flameshot
+  # Capture, OCR, and silent screen recording
+  grim
+  slurp
+  hyprpicker
+  wf-recorder
+  tesseract
+  tesseract-data-eng
+  tesseract-data-spa
+  xdg-user-dirs
   xournalpp
   pinta
   shellcheck
@@ -33,6 +42,7 @@ readonly PACKAGES=(
   pipewire
   pipewire-audio
   pipewire-pulse
+  pipewire-alsa
   wireplumber
   rtkit
   psmisc
@@ -44,6 +54,7 @@ readonly PACKAGES=(
   libnotify
   xdg-desktop-portal
   xdg-desktop-portal-gtk
+  xdg-desktop-portal-gnome
   xdg-utils
   desktop-file-utils
   shared-mime-info

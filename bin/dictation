@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fail() {
+  printf '%s\n' "$1" >&2
+  notify-send 'Dictation unavailable' "$1" || true
+  exit 1
+}
+
+case "${1:-toggle}" in
+  toggle|cancel) action=${1:-toggle} ;;
+  *) fail 'Usage: dictation [toggle|cancel]' ;;
+esac
+command -v voxtype >/dev/null || fail 'Voxtype is missing; apply the Home Manager configuration.'
+model="${XDG_DATA_HOME:-$HOME/.local/share}/voxtype/models/ggml-base.bin"
+[[ -s "$model" ]] || fail 'Speech model missing. Run make setup-dictation from the config repository.'
+systemctl --user start voxtype.service || fail 'Could not start voxtype.service; apply Home Manager and inspect its journal.'
+voxtype record "$action" || fail 'Voxtype is not ready. Retry shortly or inspect journalctl --user -u voxtype.'

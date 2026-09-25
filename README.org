@@ -100,6 +100,48 @@ Important desktop bindings:
 | =Mod-Ctrl-V=  | Open clipboard history           |
 | =Super-Alt-L= | Lock the session                 |
 | =Mod-Shift-/= | Show Niri's full hotkey overlay  |
+| =Mod-Ctrl-T= | Open btop in Foot |
+| =Mod-Shift-D= | Open lazydocker in Foot |
+| =Mod-Ctrl-Print= | Copy text from a selected region (English/Spanish OCR) |
+| =Shift-Print= | Capture and annotate with Flameshot |
+| =Mod-Alt-Print= | Start/stop silent region recording |
+| =Mod-Print= | Pick a screen color and copy its hex value |
+| =Mod-Ctrl-,= | Toggle do-not-disturb |
+| =Mod-Shift-,= | Dismiss active notifications |
+| =Mod-Alt-,= | Toggle notification history |
+| =Mod-Shift-Alt-,= | Invoke the latest notification |
+| =Mod-Ctrl-X= | Start/stop dictation to clipboard |
+| =Mod-Ctrl-Shift-X= | Cancel dictation |
+
+Capture scripts are installed by =make sync-bin=. The Ubuntu 26.04 and Arch
+host installers provide Grim, Slurp, Hyprpicker, Flameshot, wf-recorder,
+English/Spanish Tesseract data, and the PipeWire/portal dependencies.
+Home Manager provides btop, lazydocker, and Voxtype. Docker access still uses
+the existing Docker configuration; the shortcut does not elevate privileges.
+
+OCR cancellation and empty recognition leave the clipboard unchanged.
+Recordings are silent H.264 MP4 files at 30 FPS under the XDG Videos
+directory's =Recordings/= subdirectory. Select a region within one monitor.
+The recording shortcut stops only =desktop-capture-record.service=;
+diagnose failures with =journalctl --user -u desktop-capture-record=.
+Flameshot v14 uses the Niri screenshot portal; the existing Niri screenshot
+shortcuts remain. Its GNOME portal backend is included in both host installers;
+=make doctor= reports when that backend is absent.
+
+After installing host dependencies, applying Home Manager, and synchronizing
+the scripts, set up dictation once as your normal user:
+
+#+begin_src sh :results output silent
+  make setup-dictation
+#+end_src
+
+This explicitly downloads Whisper's multilingual =base= model (about 142 MB)
+and starts the configured user service. It is not part of =check= or =sync=.
+Voxtype runs locally on the CPU, detects the spoken language, and copies the
+transcript for manual pasting. Recordings are limited to 60 seconds. Niri
+uses press-to-toggle because it has no key-release bindings; no input-group
+membership is needed. The service starts with the graphical session once the
+model exists. Inspect it with =journalctl --user -u voxtype=.
 
 Noctalia v5 owns the bar, launcher, wallpaper, notifications, clipboard
 history, lock screen, OSDs, and control center. Niri starts its daemon when the

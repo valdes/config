@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fail() {
+  printf '%s\n' "$1" >&2
+  notify-send 'Text capture failed' "$1" || true
+  exit 1
+}
+
+for cmd in slurp grim tesseract wl-copy notify-send; do
+  command -v "$cmd" >/dev/null || fail "Missing command: $cmd (run the host dependency installer)."
+done
+
+selection=$(slurp) || exit 0
+[[ -n "$selection" ]] || exit 0
+text=$(grim -g "$selection" - | tesseract stdin stdout -l eng+spa --psm 6) || fail 'Could not capture or recognize the selected text.'
+[[ -n "${text//[[:space:]]/}" ]] || exit 0
+printf '%s' "$text" | wl-copy || fail 'Could not copy the recognized text.'
+notify-send 'Text captured' 'Copied the selected text to the clipboard.'

@@ -62,6 +62,7 @@
     hugo # static site generator
     glow # markdown previewer in terminal
 
+    voxtype # local dictation; audio/Wayland runtime comes from the host
     btop  # replacement of htop/nmon
     iotop # io monitoring
     iftop # network monitoring
@@ -445,6 +446,46 @@
     foot.desktop
   '';
   xdg.configFile."herdr/config.toml".source = ./herdr/config.toml;
+  xdg.configFile."voxtype/config.toml".text = ''
+    state_file = "auto"
+    [hotkey]
+    enabled = false
+    [audio]
+    device = "default"
+    sample_rate = 16000
+    max_duration_secs = 60
+    [whisper]
+    model = "base"
+    language = "auto"
+    translate = false
+    [output]
+    mode = "clipboard"
+    [output.notification]
+    on_recording_start = true
+    on_recording_stop = true
+    on_transcription = true
+  '';
+
+  systemd.user.services.voxtype = {
+    Unit = {
+      Description = "Local dictation to clipboard";
+      PartOf = [ "graphical-session.target" ];
+      After = [ "graphical-session.target" ];
+      ConditionPathExists = "%h/.local/share/voxtype/models/ggml-base.bin";
+    };
+    Service = {
+      ExecStart = "${pkgs.voxtype}/bin/voxtype daemon";
+      # Use matching Nix ALSA plugins to reach the host PipeWire server.
+      Environment = [
+        "PATH=/usr/bin:/bin:%h/.nix-profile/bin"
+        "ALSA_PLUGIN_DIR=${pkgs.pipewire}/lib/alsa-lib"
+        "ALSA_CONFIG_PATH=${pkgs.pipewire}/share/alsa/alsa.conf.d/99-pipewire-default.conf"
+      ];
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
 
   # Keep MIME associations mutable and change only the browser defaults.
   home.activation.setFirefoxDefault = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
