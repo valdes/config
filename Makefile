@@ -13,7 +13,9 @@ CODEX_SKILLS_DIR := $(HOME_DIR)/.codex/skills
 CLAUDE_SKILLS_DIR := $(HOME_DIR)/.claude/skills
 WORKFLOW_SCRIPTS := capture-text capture-record capture-qr dictation share-nearby remind transcode-media
 
-MANAGED_SKILLS := manage-makefile tiger-style-java
+MANAGED_SKILLS := manage-makefile tiger-style-java workstation
+# Omarchy links its Hyprland-oriented skills here; the workstation skill replaces them.
+OMARCHY_SKILL_LINKS := $(HOME_DIR)/.agents/skills/omarchy $(CODEX_SKILLS_DIR)/omarchy $(CLAUDE_SKILLS_DIR)/omarchy
 HOME_MANAGER_REF ?= home-manager/master
 NIX_FLAKE_FLAGS := --extra-experimental-features "nix-command flakes"
 GITLEAKS ?= gitleaks
@@ -52,7 +54,7 @@ sync-bin: ## Install repo-managed workflow commands
 	install -m 0755 "$(REPO_ROOT)/bin/rssget" "$(LOCAL_BIN_DIR)/rssget"
 	install -m 0755 $(addprefix "$(REPO_ROOT)/bin/,$(addsuffix ",$(WORKFLOW_SCRIPTS))) "$(LOCAL_BIN_DIR)/"
 
-sync-skills: ## Link repo-managed skills globally for Codex and Claude
+sync-skills: ## Link repo-managed skills globally for Codex and Claude and drop Omarchy's desktop skill
 	@set -eu; \
 	for skill in $(MANAGED_SKILLS); do \
 		source="$(SKILLS_DIR)/$$skill"; \
@@ -70,6 +72,11 @@ sync-skills: ## Link repo-managed skills globally for Codex and Claude
 		for root in "$(CODEX_SKILLS_DIR)" "$(CLAUDE_SKILLS_DIR)"; do \
 			ln -sfn "$(SKILLS_DIR)/$$skill" "$$root/$$skill"; \
 		done; \
+	done; \
+	for link in $(OMARCHY_SKILL_LINKS); do \
+		case "$$(readlink "$$link" 2>/dev/null)" in \
+			*/omarchy/default/agents/skills/omarchy) rm "$$link" ;; \
+		esac; \
 	done
 
 switch: ## Apply the Home Manager configuration from this repository
@@ -124,6 +131,7 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	test -f "$(REPO_ROOT)/urls"
 	test -f "$(REPO_ROOT)/skills/manage-makefile/SKILL.md"
 	test -f "$(REPO_ROOT)/skills/tiger-style-java/SKILL.md"
+	test -f "$(REPO_ROOT)/skills/workstation/SKILL.md"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-arch"
 	test -f "$(REPO_ROOT)/bin/install-system-deps-ubuntu26"
 	test -f "$(REPO_ROOT)/bin/rssadd"

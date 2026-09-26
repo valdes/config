@@ -53,8 +53,9 @@ The normal update cycle is:
 #+end_src
 
 =make sync= copies repository-managed dotfiles and helper commands into their
-live locations. It also links the shared =manage-makefile= and
-=tiger-style-java= skills into the global Codex and Claude skill directories.
+live locations. It also links the shared =manage-makefile=,
+=tiger-style-java=, and =workstation= skills into the global Codex and Claude
+skill directories, and removes Omarchy's Hyprland-oriented =omarchy= skill links.
 
 =make switch= applies the Home Manager configuration directly from this
 repository through =nix run home-manager/master= and a =path:= flake reference.
@@ -94,6 +95,7 @@ Important desktop bindings:
 |---------------+----------------------------------|
 | =Mod-T=       | Open Foot                        |
 | =Mod-Shift-T= | Open Herdr in Foot               |
+| =Mod-A=       | Open Codex in =~/Github=         |
 | =Mod-D=       | Toggle the Noctalia launcher     |
 | =Super-B=     | Toggle the Noctalia bar          |
 | =Mod-S=       | Open the Noctalia control center |

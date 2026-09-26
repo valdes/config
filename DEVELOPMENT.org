@@ -91,9 +91,15 @@ session. Keep planning and implementation permissions explicit in the agent
 CLI; this repository no longer supplies custom agent-loop, session, or
 worktree wrappers.
 
-The repository-managed =manage-makefile= and =tiger-style-java= skills are
-linked into both agents' global skill directories by =make sync-skills= and by
-the Home Manager configuration.
+=Mod-A= opens Codex in =~/Github= inside Foot with the =dev.vals.Agent=
+app id, which Niri routes to the =build= workspace next to Emacs.
+
+The repository-managed =manage-makefile=, =tiger-style-java=, and =workstation=
+skills are linked into both agents' global skill directories by
+=make sync-skills=; Home Manager also links =manage-makefile=. The =workstation=
+skill points agents at this repository instead of the live copies in
+=~/.config=; =make sync-skills= also removes Omarchy's =omarchy= skill links,
+which describe a Hyprland desktop this machine does not run.
 
 ** Maintain this configuration
 
