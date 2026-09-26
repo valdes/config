@@ -242,6 +242,14 @@ several feeds are available, and delegates the selected feed to =rssadd=.
   rssget                         # use the current clipboard URL
 #+end_src
 
+=make sync-bin= also installs =dev-layout=, which splits the current Herdr tab
+into an agent, a live diff, and a shell; =DEVELOPMENT.org= describes it.
+
+#+begin_src sh :results output silent
+  dev-layout                     # Codex, hunk diff --watch, shell
+  dev-layout claude
+#+end_src
+
 =bin/cpu-throttle= is a repository-local Intel P-state utility; it is not
 installed by =make sync=. It uses sudo to switch to power-saver mode, disable
 Turbo Boost, and cap performance at 60 percent. Disable restores Turbo Boost,

@@ -94,6 +94,12 @@ worktree wrappers.
 =Mod-A= opens Codex in =~/Github= inside Foot with the =dev.vals.Agent=
 app id, which Niri routes to the =build= workspace next to Emacs.
 
+Inside Herdr, =dev-layout= turns the current tab into Codex on the left, a live
+=hunk diff --watch= at the top right, and a shell below it. Pass another
+command to run a different agent, for example =dev-layout claude=. Hunk
+resolves from PATH or through =mise exec=; without it the diff pane falls back
+to =watchexec= and =git diff=.
+
 The repository-managed =manage-makefile=, =tiger-style-java=, and =workstation=
 skills are linked into both agents' global skill directories by
 =make sync-skills=; Home Manager also links =manage-makefile=. The =workstation=

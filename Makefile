@@ -11,7 +11,7 @@ HOME_MANAGER_DIR := $(CONFIG_DIR)/home-manager
 SKILLS_DIR := $(REPO_ROOT)/skills
 CODEX_SKILLS_DIR := $(HOME_DIR)/.codex/skills
 CLAUDE_SKILLS_DIR := $(HOME_DIR)/.claude/skills
-WORKFLOW_SCRIPTS := capture-text capture-record capture-qr dictation share-nearby remind transcode-media
+WORKFLOW_SCRIPTS := capture-text capture-record capture-qr dictation share-nearby remind transcode-media dev-layout
 
 MANAGED_SKILLS := manage-makefile tiger-style-java workstation
 # Omarchy links its Hyprland-oriented skills here; the workstation skill replaces them.
@@ -109,7 +109,7 @@ status: ## Show the concise Git working-tree status
 	git status --short
 
 doctor: ## Check that required workstation commands are available
-	@for cmd in home-manager cp install git glab emacs emacsclient tmux herdr codex claude foot wl-copy wl-paste firefox keepassxc restic sops age age-keygen gitleaks mat2 btop lazydocker voxtype flameshot grim slurp hyprpicker wf-recorder tesseract xdg-user-dir notify-send flock zbarimg ffmpeg magick localsend $(WORKFLOW_SCRIPTS); do \
+	@for cmd in home-manager jq cp install git glab emacs emacsclient tmux herdr codex claude foot wl-copy wl-paste firefox keepassxc restic sops age age-keygen gitleaks mat2 btop lazydocker voxtype flameshot grim slurp hyprpicker wf-recorder tesseract xdg-user-dir notify-send flock zbarimg ffmpeg magick localsend $(WORKFLOW_SCRIPTS); do \
 		command -v "$$cmd" >/dev/null || { echo "missing: $$cmd"; exit 1; }; \
 	done
 	@test -f /usr/share/xdg-desktop-portal/portals/gnome.portal || { echo "missing: xdg-desktop-portal-gnome (needed by Flameshot v14 on Niri)"; exit 1; }
@@ -150,4 +150,5 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	@for script in $(WORKFLOW_SCRIPTS); do bash -n "$(REPO_ROOT)/bin/$$script" || exit; done
 	shellcheck $(addprefix "$(REPO_ROOT)/bin/,$(addsuffix ",$(WORKFLOW_SCRIPTS)))
 	python3 "$(REPO_ROOT)/tests/capture-workflows.py"
+	python3 "$(REPO_ROOT)/tests/dev-layout.py"
 	emacs --batch -Q --eval '(with-temp-buffer (insert-file-contents "$(REPO_ROOT)/.emacs") (emacs-lisp-mode) (check-parens))'

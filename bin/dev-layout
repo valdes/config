@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Agent on the left, live diff top-right, shell bottom-right. Emacs stays in its own window.
+usage() {
+  printf 'Usage: dev-layout [AGENT_COMMAND]   (run inside Herdr; default: codex)\n' >&2
+  exit 2
+}
+
+[[ $# -le 1 ]] || usage
+[[ "${1:-}" != -* ]] || usage
+agent_command=${1:-codex}
+[[ -n "${HERDR_PANE_ID:-}" ]] || { printf 'Run dev-layout inside Herdr.\n' >&2; exit 1; }
+for command in herdr jq; do
+  command -v "$command" >/dev/null || { printf 'Missing command: %s.\n' "$command" >&2; exit 1; }
+done
+
+# mise shims are not on PATH in every session (Ubuntu shells do not activate mise).
+if command -v hunk >/dev/null; then
+  diff_command="hunk diff --watch"
+elif command -v mise >/dev/null && mise which --quiet hunk >/dev/null 2>&1; then
+  diff_command="mise exec aqua:modem-dev/hunk -- hunk diff --watch"
+elif command -v watchexec >/dev/null; then
+  diff_command="watchexec --clear -- git --no-pager diff --stat --patch"
+else
+  printf 'Missing command: hunk or watchexec.\n' >&2
+  exit 1
+fi
+
+directory=$PWD
+
+# Prints the new pane id; ratio is the share kept by the pane being split.
+split() {
+  local pane
+  pane=$(herdr pane split "$1" --direction "$2" --ratio "$3" --cwd "$directory" --no-focus |
+    jq -r '.result.pane.pane_id // empty')
+  [[ -n "$pane" ]] || { printf 'Herdr did not return a pane id.\n' >&2; exit 1; }
+  printf '%s\n' "$pane"
+}
+
+if [[ -n "${HERDR_TAB_ID:-}" ]]; then
+  herdr tab rename "$HERDR_TAB_ID" "$(basename "$directory")" >/dev/null
+fi
+diff_pane=$(split "$HERDR_PANE_ID" right 0.55)
+shell_pane=$(split "$diff_pane" down 0.7)
+herdr pane run "$diff_pane" "$diff_command" >/dev/null
+herdr pane run "$HERDR_PANE_ID" "$agent_command" >/dev/null
+printf 'Layout ready: agent %s, diff %s, shell %s.\n' "$HERDR_PANE_ID" "$diff_pane" "$shell_pane"
