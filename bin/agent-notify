@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# Desktop notification for a Claude or Codex hook; the hook event JSON arrives on stdin.
+# Prints nothing and always exits 0 so it never answers a permission request or blocks a stop.
+agent=${1:-agent}
+event=$(cat)
+command -v notify-send >/dev/null && command -v jq >/dev/null || exit 0
+
+IFS=$'\t' read -r name cwd detail < <(jq -r '
+  [.hook_event_name // "", .cwd // "", .last_assistant_message // .tool_name // .message // ""]
+  | map(gsub("\\s+"; " ")) | @tsv' <<<"$event" 2>/dev/null) || exit 0
+cwd=${cwd:-$PWD}
+repo=$(basename "$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$cwd")")
+branch=$(git -C "$cwd" branch --show-current 2>/dev/null || true)
+
+case "$name" in
+  Stop) urgency=normal; body="Done${detail:+: ${detail:0:160}}" ;;
+  PermissionRequest|Notification) urgency=critical; body="Needs approval${detail:+: ${detail:0:160}}" ;;
+  *) exit 0 ;;
+esac
+
+# One live notification per pane: a newer event replaces the previous one.
+notify-send --app-name="$agent" --urgency="$urgency" \
+  --hint="string:x-canonical-private-synchronous:agent-${HERDR_PANE_ID:-$repo}" \
+  "$agent · $repo${branch:+ ($branch)}" "$body" >/dev/null 2>&1 || true
+exit 0

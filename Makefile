@@ -11,7 +11,7 @@ HOME_MANAGER_DIR := $(CONFIG_DIR)/home-manager
 SKILLS_DIR := $(REPO_ROOT)/skills
 CODEX_SKILLS_DIR := $(HOME_DIR)/.codex/skills
 CLAUDE_SKILLS_DIR := $(HOME_DIR)/.claude/skills
-WORKFLOW_SCRIPTS := capture-text capture-record capture-qr dictation share-nearby remind transcode-media dev-layout
+WORKFLOW_SCRIPTS := capture-text capture-record capture-qr dictation share-nearby remind transcode-media dev-layout wt agent-notify
 
 MANAGED_SKILLS := manage-makefile tiger-style-java workstation
 # Omarchy links its Hyprland-oriented skills here; the workstation skill replaces them.

@@ -100,6 +100,22 @@ command to run a different agent, for example =dev-layout claude=. Hunk
 resolves from PATH or through =mise exec=; without it the diff pane falls back
 to =watchexec= and =git diff=.
 
+Run parallel agent tasks on separate branches with =wt= from inside Herdr:
+
+- =wt BRANCH [AGENT]=: create a worktree branched from the current =HEAD=,
+  open it as its own Herdr workspace, and run =dev-layout AGENT= there.
+- =wt ls=: list the repository's worktrees and their open workspaces.
+- =wt rm [--force]=: from inside a worktree workspace, remove the checkout and
+  close the workspace. The branch is kept; merge or delete it from the primary
+  checkout.
+
+=agent-notify= turns agent hook events into desktop notifications titled with
+the agent, repository, and branch: a normal one when a turn finishes and a
+critical one when an approval is pending. Notifications from the same Herdr
+pane replace each other. It is wired outside this repository in
+=~/.claude/settings.json= (=Stop= and the =permission_prompt= =Notification=)
+and =~/.codex/hooks.json= (=Stop= and =PermissionRequest=).
+
 The repository-managed =manage-makefile=, =tiger-style-java=, and =workstation=
 skills are linked into both agents' global skill directories by
 =make sync-skills=; Home Manager also links =manage-makefile=. The =workstation=

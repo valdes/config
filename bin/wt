@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# One Herdr workspace per parallel agent task, each on its own worktree and branch.
+usage() {
+  cat >&2 <<'EOF'
+Usage: wt BRANCH [AGENT_COMMAND]   new worktree from HEAD, opened with dev-layout (default: codex)
+       wt ls                       list this repository's worktrees
+       wt rm [--force]             remove the current workspace's worktree; the branch is kept
+EOF
+  exit 2
+}
+
+[[ $# -ge 1 && "$1" != -* ]] || usage
+[[ -n "${HERDR_WORKSPACE_ID:-}" ]] || { printf 'Run wt inside Herdr.\n' >&2; exit 1; }
+for command in herdr jq git; do
+  command -v "$command" >/dev/null || { printf 'Missing command: %s.\n' "$command" >&2; exit 1; }
+done
+repo=$(git rev-parse --show-toplevel 2>/dev/null) || { printf 'Not inside a Git repository.\n' >&2; exit 1; }
+
+case "$1" in
+  ls)
+    [[ $# -eq 1 ]] || usage
+    herdr worktree list --cwd "$repo" |
+      jq -r '.result.worktrees[] | [.branch // "(detached)", .path, .open_workspace_id // "-"] | @tsv'
+    ;;
+  rm)
+    [[ $# -eq 1 || ( $# -eq 2 && "$2" == --force ) ]] || usage
+    # A linked worktree has its own git dir; the primary checkout shares the common one.
+    [[ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ]] ||
+      { printf 'Refusing to remove the primary checkout.\n' >&2; exit 1; }
+    branch=$(git branch --show-current)
+    printf 'Removing %s; branch %s is kept.\n' "$repo" "${branch:-(detached)}"
+    herdr worktree remove --workspace "$HERDR_WORKSPACE_ID" ${2:+"$2"} >/dev/null
+    ;;
+  *)
+    [[ $# -le 2 ]] || usage
+    branch=$1
+    agent_command=${2:-codex}
+    git check-ref-format --branch "$branch" >/dev/null ||
+      { printf 'Invalid branch name: %s.\n' "$branch" >&2; exit 1; }
+    pane=$(herdr worktree create --cwd "$repo" --branch "$branch" --base "$(git rev-parse HEAD)" --focus |
+      jq -r '.result.root_pane.pane_id // empty')
+    [[ -n "$pane" ]] || { printf 'Herdr did not return a pane id.\n' >&2; exit 1; }
+    herdr pane run "$pane" "dev-layout $(printf '%q' "$agent_command")" >/dev/null
+    ;;
+esac
