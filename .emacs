@@ -1,3 +1,4 @@
+;;; .emacs --- Personal Emacs configuration  -*- lexical-binding: t; -*-
 
 ;; Added by Package.el.  This must come before configurations of
 ;; installed packages.  Don't delete this line.  If you don't want it,
@@ -7,6 +8,12 @@
 
 (require 'package)
 (require 'subr-x)
+
+;; Emacs 30+ warns when loading Elisp without a `lexical-binding' cookie.
+;; Some packages (e.g. zenburn-theme, loaded from source by `load-theme')
+;; still lack it; keep the warning in *Warnings* without popping it up.
+(add-to-list 'warning-suppress-types '(files missing-lexbind-cookie))
+
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
 
@@ -448,7 +455,7 @@
 
 (defun aic-project-root ()
   "Return the current project root or `default-directory'."
-  (or (when-let ((project (project-current nil)))
+  (or (when-let* ((project (project-current nil)))
         (car (project-roots project)))
       default-directory))
 
