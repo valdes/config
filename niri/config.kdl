@@ -719,6 +719,7 @@ binds {
     Mod+Ctrl+Shift+X repeat=false hotkey-overlay-title="Cancel Dictation" { spawn "dictation" "cancel"; }
 
     Mod+Ctrl+Print repeat=false hotkey-overlay-title="Capture Text (English/Spanish OCR)" { spawn "capture-text"; }
+    Mod+Ctrl+Shift+Print repeat=false hotkey-overlay-title="Capture QR Code" { spawn "capture-qr"; }
     Shift+Print repeat=false hotkey-overlay-title="Annotate Screenshot: Flameshot" { spawn "flameshot" "gui"; }
     Mod+Alt+Print repeat=false hotkey-overlay-title="Toggle Silent Region Recording" { spawn "capture-record"; }
     Mod+Print repeat=false hotkey-overlay-title="Copy Screen Color" { spawn "hyprpicker" "-a"; }

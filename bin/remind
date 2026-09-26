@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  printf 'Usage: remind MINUTES MESSAGE... | remind show | remind clear\n' >&2
+  exit 2
+}
+
+[[ $# -ge 1 ]] || usage
+[[ -n "${XDG_RUNTIME_DIR:-}" && -d "$XDG_RUNTIME_DIR" ]] || { printf 'Run this command inside your graphical session.\n' >&2; exit 1; }
+directory="$XDG_RUNTIME_DIR/desktop-reminders"
+
+case "$1" in
+  show)
+    [[ $# == 1 ]] || usage
+    [[ -d "$directory" ]] || exit 0
+    for file in "$directory"/*.message; do
+      [[ -f "$file" ]] || continue
+      unit="desktop-remind-$(basename "$file" .message)"
+      if systemctl --user is-active --quiet "$unit.timer"; then
+        IFS= read -r deadline <"$file"
+        message=$(sed -n '2,$p' "$file")
+        printf '%s  %s\n' "$(date -d "@$deadline" '+%F %H:%M')" "$message"
+      fi
+    done
+    exit 0
+    ;;
+  clear)
+    [[ $# == 1 ]] || usage
+    [[ -d "$directory" ]] || exit 0
+    for file in "$directory"/*.message; do
+      [[ -f "$file" ]] || continue
+      unit="desktop-remind-$(basename "$file" .message)"
+      systemctl --user stop "$unit.timer" "$unit.service" 2>/dev/null || true
+      rm -f -- "$file"
+    done
+    exit 0
+    ;;
+esac
+
+[[ $# -ge 2 && "$1" =~ ^[1-9][0-9]*$ && ${#1} -le 5 ]] || usage
+(( 10#$1 <= 10080 )) || usage
+minutes=$1
+shift
+message="$*"
+[[ -n "${message//[[:space:]]/}" ]] || usage
+command -v systemd-run >/dev/null || { printf 'Missing command: systemd-run.\n' >&2; exit 1; }
+command -v notify-send >/dev/null || { printf 'Missing command: notify-send.\n' >&2; exit 1; }
+mkdir -p "$directory"
+id="$(date +%s%N)-$$"
+unit="desktop-remind-$id"
+file="$directory/$id.message"
+deadline=$(( $(date +%s) + minutes * 60 ))
+printf '%s\n%s\n' "$deadline" "$message" >"$file"
+# shellcheck disable=SC2016 # Arguments expand in the scheduled shell.
+if ! systemd-run --user --quiet --collect --on-active="${minutes}m" --unit="$unit" \
+  /bin/bash -c 'notify-send "Reminder" "$1"; rm -f -- "$2"' bash "$message" "$file"; then
+  rm -f -- "$file"
+  printf 'Could not schedule the reminder.\n' >&2
+  exit 1
+fi
+printf 'Reminder set for %s\n' "$(date -d "@$deadline" '+%F %H:%M')"

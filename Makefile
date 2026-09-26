@@ -11,7 +11,7 @@ HOME_MANAGER_DIR := $(CONFIG_DIR)/home-manager
 SKILLS_DIR := $(REPO_ROOT)/skills
 CODEX_SKILLS_DIR := $(HOME_DIR)/.codex/skills
 CLAUDE_SKILLS_DIR := $(HOME_DIR)/.claude/skills
-CAPTURE_SCRIPTS := capture-text capture-record dictation
+WORKFLOW_SCRIPTS := capture-text capture-record capture-qr dictation share-nearby remind transcode-media
 
 MANAGED_SKILLS := manage-makefile tiger-style-java
 HOME_MANAGER_REF ?= home-manager/master
@@ -50,7 +50,7 @@ sync-bin: ## Install repo-managed workflow commands
 	install -m 0755 "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(BIN_DIR)/install-system-deps-ubuntu26"
 	install -m 0755 "$(REPO_ROOT)/bin/rssadd" "$(LOCAL_BIN_DIR)/rssadd"
 	install -m 0755 "$(REPO_ROOT)/bin/rssget" "$(LOCAL_BIN_DIR)/rssget"
-	install -m 0755 $(addprefix "$(REPO_ROOT)/bin/,$(addsuffix ",$(CAPTURE_SCRIPTS))) "$(LOCAL_BIN_DIR)/"
+	install -m 0755 $(addprefix "$(REPO_ROOT)/bin/,$(addsuffix ",$(WORKFLOW_SCRIPTS))) "$(LOCAL_BIN_DIR)/"
 
 sync-skills: ## Link repo-managed skills globally for Codex and Claude
 	@set -eu; \
@@ -102,7 +102,7 @@ status: ## Show the concise Git working-tree status
 	git status --short
 
 doctor: ## Check that required workstation commands are available
-	@for cmd in home-manager cp install git glab emacs emacsclient tmux herdr codex claude foot wl-copy wl-paste firefox keepassxc restic sops age age-keygen gitleaks mat2 btop lazydocker voxtype flameshot grim slurp hyprpicker wf-recorder tesseract xdg-user-dir notify-send flock $(CAPTURE_SCRIPTS); do \
+	@for cmd in home-manager cp install git glab emacs emacsclient tmux herdr codex claude foot wl-copy wl-paste firefox keepassxc restic sops age age-keygen gitleaks mat2 btop lazydocker voxtype flameshot grim slurp hyprpicker wf-recorder tesseract xdg-user-dir notify-send flock zbarimg ffmpeg magick localsend $(WORKFLOW_SCRIPTS); do \
 		command -v "$$cmd" >/dev/null || { echo "missing: $$cmd"; exit 1; }; \
 	done
 	@test -f /usr/share/xdg-desktop-portal/portals/gnome.portal || { echo "missing: xdg-desktop-portal-gnome (needed by Flameshot v14 on Niri)"; exit 1; }
@@ -139,7 +139,7 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	bash -n "$(REPO_ROOT)/bin/keyd-system"
 	bash -n "$(REPO_ROOT)/bin/cpu-throttle"
 	shellcheck "$(REPO_ROOT)/bin/install-system-deps-arch" "$(REPO_ROOT)/bin/install-system-deps-ubuntu26" "$(REPO_ROOT)/bin/keyd-system" "$(REPO_ROOT)/bin/rssadd" "$(REPO_ROOT)/bin/rssget" "$(REPO_ROOT)/bin/cpu-throttle"
-	@for script in $(CAPTURE_SCRIPTS); do bash -n "$(REPO_ROOT)/bin/$$script" || exit; done
-	shellcheck $(addprefix "$(REPO_ROOT)/bin/,$(addsuffix ",$(CAPTURE_SCRIPTS)))
+	@for script in $(WORKFLOW_SCRIPTS); do bash -n "$(REPO_ROOT)/bin/$$script" || exit; done
+	shellcheck $(addprefix "$(REPO_ROOT)/bin/,$(addsuffix ",$(WORKFLOW_SCRIPTS)))
 	python3 "$(REPO_ROOT)/tests/capture-workflows.py"
 	emacs --batch -Q --eval '(with-temp-buffer (insert-file-contents "$(REPO_ROOT)/.emacs") (emacs-lisp-mode) (check-parens))'

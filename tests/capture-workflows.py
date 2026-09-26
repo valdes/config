@@ -30,6 +30,15 @@ elif name == "tesseract":
     print(os.environ.get("OCR_TEXT", "Error: conexión fallida"))
 elif name == "wl-copy":
     (root / "clipboard").write_text(sys.stdin.read())
+elif name == "wl-paste":
+    print(os.environ.get("CLIP_CONTENT", "Shared note"), end="")
+elif name == "zbarimg":
+    sys.stdin.read()
+    print(os.environ.get("QR_VALUE", "otpauth://example"))
+elif name == "file":
+    print(os.environ.get("MIME_TYPE", "image/png"))
+elif name in ("magick", "ffmpeg"):
+    Path(args[-1]).write_bytes(b"converted")
 elif name == "xdg-user-dir":
     print(root / "Videos with spaces")
 elif name == "systemctl" and "show" in args:
@@ -46,10 +55,11 @@ class Workflows(unittest.TestCase):
         self.root = Path(self.tmp.name)
         commands = self.root / "bin"
         commands.mkdir()
-        for name in ["bash", "flock", "mkdir", "date", "readlink"]:
+        for name in ["bash", "flock", "mkdir", "date", "readlink", "mktemp", "rm", "dirname", "basename", "sed"]:
             (commands / name).symlink_to(shutil.which(name))
-        for name in ["slurp", "grim", "tesseract", "wl-copy", "notify-send",
-                     "systemctl", "systemd-run", "wf-recorder", "xdg-user-dir", "voxtype"]:
+        for name in ["slurp", "grim", "tesseract", "wl-copy", "wl-paste", "zbarimg",
+                     "notify-send", "systemctl", "systemd-run", "wf-recorder",
+                     "xdg-user-dir", "voxtype", "localsend", "magick", "ffmpeg", "file"]:
             path = commands / name
             path.write_text(f"#!{sys.executable}\n" + MOCK)
             path.chmod(0o755)
@@ -71,6 +81,56 @@ class Workflows(unittest.TestCase):
         self.assertEqual(self.run_script("capture-text").returncode, 0)
         self.assertEqual(self.clipboard.read_text(), "Error: conexión fallida")
         self.assertIn("eng+spa", self.calls("tesseract")[0])
+
+    def test_qr_capture_is_sensitive_and_preserves_clipboard_on_failure(self):
+        self.assertEqual(self.run_script("capture-qr").returncode, 0)
+        self.assertEqual(self.clipboard.read_text(), "otpauth://example")
+        self.assertIn("--sensitive", self.calls("wl-copy")[0])
+        self.clipboard.write_text("original clipboard")
+        for env in [{"FAIL_COMMAND": "slurp"}, {"SELECTION": ""},
+                    {"FAIL_COMMAND": "zbarimg"}, {"QR_VALUE": ""}]:
+            with self.subTest(env=env):
+                self.run_script("capture-qr", **env)
+                self.assertEqual(self.clipboard.read_text(), "original clipboard")
+
+    def test_nearby_sharing_uses_explicit_paths_and_runtime_clipboard_file(self):
+        document = self.root / "document.txt"
+        document.write_text("Hello")
+        self.assertEqual(self.run_script("share-nearby", "file", str(document)).returncode, 0)
+        self.assertEqual(self.calls("localsend")[-1], ["localsend", "--headless", "send", str(document)])
+        self.assertEqual(self.run_script("share-nearby", "clipboard").returncode, 0)
+        shared_file = Path(self.calls("localsend")[-1][-1])
+        self.assertEqual(shared_file.read_text(), "Shared note")
+        self.assertEqual(self.run_script("share-nearby", "file", str(self.root / "missing")).returncode, 1)
+        self.assertEqual(len(self.calls("localsend")), 2)
+
+    def test_reminders_use_owned_timers(self):
+        result = self.run_script("remind", "15", "Check", "build")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--on-active=15m", self.calls("systemd-run")[0])
+        self.assertTrue(any(part.startswith("--unit=desktop-remind-") for part in self.calls("systemd-run")[0]))
+        shown = self.run_script("remind", "show")
+        self.assertIn("Check build", shown.stdout)
+        self.assertEqual(self.run_script("remind", "clear").returncode, 0)
+        self.assertTrue(any(".timer" in " ".join(call) for call in self.calls("systemctl")))
+        self.assertEqual(self.run_script("remind", "0", "invalid").returncode, 2)
+        self.assertEqual(self.run_script("remind", "08", "invalid").returncode, 2)
+        self.assertEqual(self.run_script("remind", "10081", "invalid").returncode, 2)
+
+    def test_transcode_refuses_overwrite_and_selects_format(self):
+        image = self.root / "photo.png"
+        image.write_bytes(b"image")
+        result = self.run_script("transcode-media", str(image), "jpg", "medium")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.root / "photo-medium.jpg").exists())
+        self.assertIn("2160x>", self.calls("magick")[0])
+        self.assertEqual(self.run_script("transcode-media", str(image), "jpg", "medium").returncode, 1)
+        video = self.root / "demo.mkv"
+        video.write_bytes(b"video")
+        result = self.run_script("transcode-media", str(video), "mp4", "720p", MIME_TYPE="video/x-matroska")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.root / "demo-720p.mp4").exists())
+        self.assertIn("-n", self.calls("ffmpeg")[0])
 
     def test_cancel_empty_and_failed_ocr_preserve_clipboard(self):
         for env in [{"FAIL_COMMAND": "slurp"}, {"SELECTION": ""},

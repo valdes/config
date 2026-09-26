@@ -103,6 +103,7 @@ Important desktop bindings:
 | =Mod-Ctrl-T= | Open btop in Foot |
 | =Mod-Shift-D= | Open lazydocker in Foot |
 | =Mod-Ctrl-Print= | Copy text from a selected region (English/Spanish OCR) |
+| =Mod-Ctrl-Shift-Print= | Copy a QR code from a selected region |
 | =Shift-Print= | Capture and annotate with Flameshot |
 | =Mod-Alt-Print= | Start/stop silent region recording |
 | =Mod-Print= | Pick a screen color and copy its hex value |
@@ -118,6 +119,26 @@ host installers provide Grim, Slurp, Hyprpicker, Flameshot, wf-recorder,
 English/Spanish Tesseract data, and the PipeWire/portal dependencies.
 Home Manager provides btop, lazydocker, and Voxtype. Docker access still uses
 the existing Docker configuration; the shortcut does not elevate privileges.
+
+Other borrowed desktop workflows are terminal commands:
+
+#+begin_src sh
+  share-nearby clipboard
+  share-nearby file ~/Videos/Recordings/example.mp4
+  share-nearby folder ~/Documents
+  remind 15 "Check build"
+  remind show
+  remind clear
+  transcode-media ~/Videos/Recordings/example.mp4 mp4 720p
+  transcode-media ~/Pictures/example.heic jpg medium
+#+end_src
+
+=capture-qr= copies only decoded QR content to the sensitive clipboard and
+leaves the clipboard unchanged on cancellation or failure. =share-nearby=
+uses LocalSend; clipboard mode keeps a temporary text file in the session
+runtime directory until logout so LocalSend can read it. =remind= uses user
+systemd timers and Noctalia notifications. =transcode-media= writes beside
+the input, prints the output path, and refuses to overwrite an existing file.
 
 OCR cancellation and empty recognition leave the clipboard unchanged.
 Recordings are silent H.264 MP4 files at 30 FPS under the XDG Videos

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fail() {
+  printf '%s\n' "$1" >&2
+  notify-send 'QR capture failed' "$1" || true
+  exit 1
+}
+
+[[ $# == 0 ]] || fail 'Usage: capture-qr'
+for cmd in slurp grim zbarimg wl-copy notify-send; do
+  command -v "$cmd" >/dev/null || fail "Missing command: $cmd (apply Home Manager and run the host dependency installer)."
+done
+
+selection=$(slurp) || exit 0
+[[ -n "$selection" ]] || exit 0
+result=$(grim -g "$selection" - | zbarimg -q --raw -Sdisable -Sqrcode.enable - 2>/dev/null) || fail 'No QR code found in the selected region.'
+[[ -n "$result" ]] || fail 'No QR code found in the selected region.'
+printf '%s' "$result" | wl-copy --sensitive || fail 'Could not copy the QR code.'
+notify-send 'QR code copied' 'The decoded value is on the clipboard.'

@@ -61,6 +61,9 @@
     # productivity
     hugo # static site generator
     glow # markdown previewer in terminal
+    zbar # QR decoding for selected screen regions
+    ffmpeg # shrink recordings before sharing
+    imagemagick # resize and strip image metadata before sharing
 
     voxtype # local dictation; audio/Wayland runtime comes from the host
     btop  # replacement of htop/nmon

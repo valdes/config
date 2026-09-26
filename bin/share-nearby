@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  printf 'Usage: share-nearby clipboard | file PATH... | folder PATH...\n' >&2
+  exit 2
+}
+
+[[ $# -ge 1 ]] || usage
+mode=$1
+shift
+command -v localsend >/dev/null || { printf 'Missing command: localsend (run the host dependency installer).\n' >&2; exit 1; }
+
+case "$mode" in
+  clipboard)
+    [[ $# == 0 ]] || usage
+    command -v wl-paste >/dev/null || { printf 'Missing command: wl-paste.\n' >&2; exit 1; }
+    [[ -n "${XDG_RUNTIME_DIR:-}" && -d "$XDG_RUNTIME_DIR" ]] || { printf 'Run this command inside your graphical session.\n' >&2; exit 1; }
+    file=$(mktemp "$XDG_RUNTIME_DIR/desktop-share-XXXXXXXX.txt")
+    if ! wl-paste >"$file" || [[ ! -s "$file" ]]; then
+      rm -f -- "$file"
+      printf 'The clipboard has no shareable content.\n' >&2
+      exit 1
+    fi
+    # LocalSend may return before the transfer; the runtime directory removes this file at logout.
+    localsend --headless send "$file"
+    ;;
+  file|folder)
+    [[ $# -ge 1 ]] || usage
+    for path in "$@"; do
+      if [[ "$mode" == file ]]; then
+        [[ -f "$path" ]] || { printf 'Not a file: %s\n' "$path" >&2; exit 1; }
+      else
+        [[ -d "$path" ]] || { printf 'Not a directory: %s\n' "$path" >&2; exit 1; }
+      fi
+    done
+    localsend --headless send "$@"
+    ;;
+  *) usage ;;
+esac

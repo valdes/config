@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  printf 'Usage: transcode-media INPUT <jpg|png|mp4|gif> <high|medium|low|4k|1080p|720p>\n' >&2
+  exit 2
+}
+
+[[ $# == 3 ]] || usage
+input=$1
+format=$2
+resolution=$3
+[[ -f "$input" ]] || { printf 'Not a file: %s\n' "$input" >&2; exit 1; }
+command -v file >/dev/null || { printf 'Missing command: file.\n' >&2; exit 1; }
+mime=$(file -b --mime-type -- "$input")
+
+case "$mime:$format:$resolution" in
+  image/*:jpg:high|image/*:png:high) width=3160 ;;
+  image/*:jpg:medium|image/*:png:medium) width=2160 ;;
+  image/*:jpg:low|image/*:png:low) width=1080 ;;
+  video/*:mp4:4k|video/*:gif:4k) height=2160 ;;
+  video/*:mp4:1080p|video/*:gif:1080p) height=1080 ;;
+  video/*:mp4:720p|video/*:gif:720p) height=720 ;;
+  *) usage ;;
+esac
+
+directory=$(dirname -- "$input")
+basename=$(basename -- "$input")
+output="$directory/${basename%.*}-$resolution.$format"
+[[ ! -e "$output" ]] || { printf 'Output already exists: %s\n' "$output" >&2; exit 1; }
+
+if [[ "$mime" == image/* ]]; then
+  command -v magick >/dev/null || { printf 'Missing command: magick (apply Home Manager).\n' >&2; exit 1; }
+  if [[ "$format" == jpg ]]; then
+    magick "$input" -resize "${width}x>" -quality 85 -strip "$output"
+  else
+    magick "$input" -resize "${width}x>" -strip "$output"
+  fi
+else
+  command -v ffmpeg >/dev/null || { printf 'Missing command: ffmpeg (apply Home Manager).\n' >&2; exit 1; }
+  scale="scale=-2:min(ih\\,$height)"
+  if [[ "$format" == mp4 ]]; then
+    ffmpeg -nostdin -n -i "$input" -vf "$scale" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -movflags +faststart "$output"
+  else
+    ffmpeg -nostdin -n -i "$input" -vf "fps=10,$scale:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" "$output"
+  fi
+fi
+printf '%s\n' "$output"
