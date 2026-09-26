@@ -241,12 +241,15 @@
           shadow = false;
           capsule = false;
           reserve_space = true;
-          start = [ "workspaces" "cpu" "ram" "temp" ];
-          # Grouped as one tight cluster around the clock instead of spread
-          # to the far edge, so the bar doesn't leave big empty gaps on the
+          start = [ "workspaces" ];
+          # Kept to just clock + weather so the center stays compact on the
           # narrow rotated monitor.
-          center = [ "caffeine" "notifications" "clock" "weather" "thepunkoff/pomodoro:widget" ];
+          center = [ "clock" "weather" ];
+          # Readouts first (pomodoro timer, usage meter), then tray and system
+          # indicators, with the caffeine toggle and notification bell next to
+          # control-center at the corner.
           end = [
+            "thepunkoff/pomodoro:widget"
             "bar"
             "tray"
             "keyboard_layout"
@@ -254,6 +257,8 @@
             "bluetooth"
             "volume"
             "battery"
+            "caffeine"
+            "notifications"
             "control-center"
           ];
         };
@@ -270,9 +275,6 @@
           format = "{:%a %d %b  %H:%M}";
           tooltip_format = "{:%F  W%V}";
         };
-        widget.cpu = { type = "sysmon"; stat = "cpu_usage"; };
-        widget.ram = { type = "sysmon"; stat = "ram_used"; };
-        widget.temp = { type = "sysmon"; stat = "cpu_temp"; };
         widget.caffeine.type = "caffeine";
         widget.notifications.type = "notifications";
         widget.weather = {
