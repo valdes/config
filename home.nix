@@ -247,10 +247,12 @@
           center = [ "clock" "weather" ];
           # Readouts first (pomodoro timer, usage meter), then tray and system
           # indicators, with the caffeine toggle and notification bell next to
-          # control-center at the corner.
+          # control-center at the corner. Privacy, bluetooth, keyboard layout,
+          # battery and notifications hide themselves until they matter.
           end = [
             "thepunkoff/pomodoro:widget"
             "bar"
+            "privacy"
             "tray"
             "keyboard_layout"
             "network"
@@ -268,7 +270,7 @@
           show_labels = true;
           label_source = "name";
           max_label_chars = 10;
-          labels_only_when_occupied = false;
+          labels_only_when_occupied = true;
           hide_when_empty = false;
         };
         widget.clock = {
@@ -276,7 +278,14 @@
           tooltip_format = "{:%F  W%V}";
         };
         widget.caffeine.type = "caffeine";
-        widget.notifications.type = "notifications";
+        widget.notifications = {
+          type = "notifications";
+          hide_when_no_unread = true;
+        };
+        widget.privacy = {
+          type = "privacy";
+          hide_inactive = true;
+        };
         widget.weather = {
           type = "weather";
           show_temperature = false;
@@ -284,9 +293,16 @@
         };
         widget.tray.drawer = true;
         widget.network.show_label = false;
-        widget.bluetooth.show_label = false;
+        widget.bluetooth = {
+          show_label = false;
+          hide_when_no_connected_device = true;
+        };
+        widget.keyboard_layout.hide_when_single_layout = true;
         widget.volume.show_label = false;
-        widget.battery.show_label = false;
+        widget.battery = {
+          show_label = false;
+          hide_when_plugged = true;
+        };
 
         dock.enabled = false;
         desktop_widgets.enabled = false;
