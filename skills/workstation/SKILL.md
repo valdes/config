@@ -21,12 +21,14 @@ Read `~/Github/config/AGENTS.md` before changing anything.
 | Packages, voxtype, user services | `home.nix` |
 | `~/.emacs`, `~/.tmux.conf` | `.emacs`, `.tmux.conf` |
 | `~/.newsboat/urls` | `urls` |
+| Omarchy app themes (btop, Neovim, VS Code, browser) | `omarchy/themes/zenburn/colors.toml`, applied with `omarchy-theme-set zenburn` |
 | `~/.local/bin/*`, `~/bin/*` | `bin/` |
 | `~/.claude/skills/*`, `~/.codex/skills/*` | `skills/` (listed in `MANAGED_SKILLS`) |
 
 Omarchy is installed as a base layer, but the session runs Niri with Noctalia.
 Do not edit `~/.config/hypr`, `~/.config/omarchy`, or `~/.local/share/omarchy`
-to change this desktop.
+to change this desktop. The one exception is the `zenburn` theme that `sync-core` installs; keep
+it as the active Omarchy theme so generated app colors match Foot and Noctalia.
 
 ## Conventions
 
