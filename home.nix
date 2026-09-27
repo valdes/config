@@ -271,7 +271,7 @@
           label_source = "name";
           max_label_chars = 10;
           labels_only_when_occupied = true;
-          hide_when_empty = false;
+          hide_when_empty = true;
         };
         widget.clock = {
           format = "{:%a %d %b  %H:%M}";
