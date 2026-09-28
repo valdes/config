@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Open a git worktree as its own Herdr workspace with dev-layout
 set -euo pipefail
 
 # One Herdr workspace per parallel agent task, each on its own worktree and branch.

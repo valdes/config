@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: OCR a screen region (English/Spanish) to the clipboard
 set -euo pipefail
 
 fail() {

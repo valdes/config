@@ -1,4 +1,5 @@
 #!/bin/bash
+# summary: Find a site's RSS feeds and add one to Newsboat
 
 # Searches the website for RSS feeds and adds them to newsboat url list. Can
 # also find hidden RSS feeds on various websites, namely Youtube, Reddit,

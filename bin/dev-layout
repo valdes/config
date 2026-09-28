@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Split the Herdr tab into agent, live diff, and shell panes
 set -euo pipefail
 
 # Agent on the left, live diff top-right, shell bottom-right. Emacs stays in its own window.

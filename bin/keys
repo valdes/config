@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# summary: Search every Niri, tmux, Herdr, and Emacs binding plus the helper commands
+usage() {
+  printf 'Usage: keys          print every binding and helper\n       keys menu     pick one in fuzzel; Niri binds run, helpers copy their name\n' >&2
+  exit 2
+}
+
+niri_config=${KEYS_NIRI_CONFIG:-$HOME/.config/niri/config.kdl}
+tmux_config=${KEYS_TMUX_CONFIG:-$HOME/.tmux.conf}
+herdr_config=${KEYS_HERDR_CONFIG:-$HOME/.config/herdr/config.toml}
+emacs_config=${KEYS_EMACS_CONFIG:-$HOME/.emacs}
+read -r -a helper_dirs <<<"${KEYS_HELPER_DIRS:-$HOME/.local/bin $HOME/bin}"
+
+# Each entry is SOURCE<tab>KEY<tab>DESCRIPTION<tab>ACTION; only Niri and helper entries carry an action.
+niri_entries() {
+  [[ -r $niri_config ]] || return 0
+  awk '
+    /^binds[[:space:]]*\{/ { inside = 1; next }
+    inside && /^\}/ { inside = 0 }
+    !inside || /^[[:space:]]*\/\// || !/\{.*\}/ { next }
+    {
+      line = $0; sub(/^[[:space:]]+/, "", line)
+      key = line; sub(/[[:space:]{].*/, "", key)
+      props = line; sub(/^[^[:space:]{]+/, "", props); sub(/\{.*/, "", props)
+      body = line; sub(/^[^{]*\{[[:space:]]*/, "", body); sub(/;?[[:space:]]*\}[[:space:]]*$/, "", body)
+      if (props ~ /hotkey-overlay-title=null/) next
+      title = body; gsub(/"/, "", title)
+      if (match(props, /hotkey-overlay-title="[^"]*"/)) title = substr(props, RSTART + 22, RLENGTH - 23)
+      printf "niri\t%s\t%s\t%s\n", key, title, body
+    }' "$niri_config"
+}
+
+tmux_entries() {
+  [[ -r $tmux_config ]] || return 0
+  awk '
+    /^set(-option)? .*[[:space:]]prefix[[:space:]]/ { prefix = $NF }
+    /^bind(-key)?[[:space:]]/ {
+      line = $0; note = ""
+      if (match(line, /-N "[^"]*"/)) { note = substr(line, RSTART + 4, RLENGTH - 5); line = substr(line, 1, RSTART - 1) substr(line, RSTART + RLENGTH) }
+      n = split(line, word, /[[:space:]]+/)
+      for (i = 2; i <= n && word[i] ~ /^-/; i++) if (word[i] == "-T") i++
+      key = word[i]; command = ""
+      for (j = i + 1; j <= n; j++) command = command (command == "" ? "" : " ") word[j]
+      sub(/[[:space:]]+#.*$/, "", command)
+      printf "tmux\t%s %s\t%s\t\n", prefix, key, note != "" ? note : command
+    }' "$tmux_config"
+}
+
+herdr_entries() {
+  [[ -r $herdr_config ]] || return 0
+  awk '
+    /^\[/ { inside = ($0 == "[keys]"); next }
+    !inside || !/=/ { next }
+    {
+      name = $0; sub(/[[:space:]]*=.*/, "", name)
+      value = $0; sub(/^[^=]*=[[:space:]]*/, "", value); gsub(/[]["]/, "", value); gsub(/,[[:space:]]*/, " or ", value)
+      if (name == "prefix") { prefix = value; next }
+      gsub(/prefix\+/, prefix " ", value); gsub(/_/, " ", name)
+      printf "herdr\t%s\t%s\t\n", value, name
+    }' "$herdr_config"
+}
+
+emacs_entries() {
+  [[ -r $emacs_config ]] || return 0
+  awk '
+    /^\((global-set-key|define-key)[[:space:]]/ {
+      line = $0; sub(/[[:space:]]*;.*$/, "", line); sub(/\)[[:space:]]*$/, "", line)
+      map = ""
+      if (line ~ /^\(define-key/) { sub(/^\(define-key[[:space:]]+/, "", line); map = line; sub(/[[:space:]].*/, "", map); sub(/^[^[:space:]]+[[:space:]]+/, "", line) }
+      else sub(/^\(global-set-key[[:space:]]+/, "", line)
+      command = line; sub(/.*[[:space:]]/, "", command); sub(/^#?'"'"'/, "", command)
+      key = line; sub(/[[:space:]]+[^[:space:]]+$/, "", key)
+      if (key ~ /^"/) {
+        gsub(/"/, "", key); spaced = ""
+        while (key != "") {
+          step = match(key, /^\\[CM]-/) ? 4 : 1
+          spaced = spaced (spaced == "" ? "" : " ") substr(key, 1 + (step == 4), step - (step == 4))
+          key = substr(key, step + 1)
+        }
+        key = spaced
+      }
+      sub(/^\(kbd[[:space:]]+"/, "", key); sub(/"\)$/, "", key); gsub(/^\[|\]$/, "", key)
+      printf "emacs\t%s%s\t%s\t\n", map == "" ? "" : map " ", key, command
+    }' "$emacs_config"
+}
+
+helper_entries() {
+  local dir file summary
+  for dir in "${helper_dirs[@]}"; do
+    for file in "$dir"/*; do
+      [[ -f $file && -x $file ]] || continue
+      summary=$(sed -n '2,5s/^# summary: //p' "$file")
+      [[ -n $summary ]] && printf 'helper\t%s\t%s\t%s\n' "${file##*/}" "$summary" "${file##*/}"
+    done
+  done
+}
+
+entries() {
+  niri_entries
+  tmux_entries
+  herdr_entries
+  emacs_entries
+  helper_entries
+}
+
+run_entry() {
+  local source=$1 action=$2
+  local -a words
+  case $source in
+    niri)
+      mapfile -t words < <(xargs printf '%s\n' <<<"$action")
+      if (( ${#words[@]} > 1 )); then
+        niri msg action "${words[0]}" -- "${words[@]:1}"
+      else
+        niri msg action "${words[0]}"
+      fi
+      ;;
+    helper)
+      printf '%s' "$action" | wl-copy
+      notify-send 'Copied helper name' "$action" || true
+      ;;
+  esac
+}
+
+menu() {
+  local -a rows
+  local index source key description action
+  mapfile -t rows < <(entries)
+  index=$(for row in "${rows[@]}"; do
+    IFS=$'\t' read -r source key description action <<<"$row"
+    printf '%-6s  %-24s  %s\n' "$source" "$key" "$description"
+  done | fuzzel --dmenu --index --prompt 'keys> ' --width 90 --lines 20) || exit 0
+  [[ $index =~ ^[0-9]+$ ]] || exit 0
+  IFS=$'\t' read -r source key description action <<<"${rows[index]}"
+  [[ -n $action ]] && run_entry "$source" "$action"
+  return 0
+}
+
+case ${1:-} in
+  '') entries | awk -F '\t' '{ printf "%-6s  %-24s  %s\n", $1, $2, $3 }' ;;
+  menu) menu ;;
+  *) usage ;;
+esac

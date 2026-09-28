@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Cap or restore Intel CPU performance and turbo
 
 set -euo pipefail
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Send the clipboard, files, or folders with LocalSend
 set -euo pipefail
 
 usage() {

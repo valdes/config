@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Schedule, show, or clear desktop reminders
 set -euo pipefail
 
 usage() {

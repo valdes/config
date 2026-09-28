@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Install host packages this workstation needs on Ubuntu 26.04
 
 set -euo pipefail
 

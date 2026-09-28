@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Install host packages this workstation needs on Arch
 
 set -euo pipefail
 

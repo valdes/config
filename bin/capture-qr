@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Decode a QR code from a screen region to the clipboard
 set -euo pipefail
 
 fail() {

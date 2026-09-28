@@ -1,4 +1,5 @@
 #!/bin/sh
+# summary: Add an RSS feed URL to Newsboat
 
 notify() {
 	message="$1"

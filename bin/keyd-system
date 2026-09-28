@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Build, switch, or roll back the Nix-managed keyd service
 
 set -euo pipefail
 

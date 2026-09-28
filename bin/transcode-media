@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Convert an image or video to a smaller format or size
 set -euo pipefail
 
 usage() {

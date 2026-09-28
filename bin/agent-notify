@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Desktop notification for Claude or Codex hook events
 set -uo pipefail
 
 # Desktop notification for a Claude or Codex hook; the hook event JSON arrives on stdin.

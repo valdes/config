@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: Toggle or cancel voice dictation to the clipboard
 set -euo pipefail
 
 fail() {
