@@ -463,6 +463,28 @@
     TERMINAL = "foot";
   };
 
+  # Launcher entries for the argument-free bin/ helpers, so Mod+D finds them by name.
+  xdg.desktopEntries =
+    let
+      helper = name: args: comment: icon: {
+        inherit name comment icon;
+        exec = lib.concatStringsSep " " ([ "${config.home.homeDirectory}/.local/bin/${lib.head args}" ] ++ lib.tail args);
+        categories = [ "Utility" ];
+      };
+    in
+    {
+      keys = helper "Search Keys and Helpers" [ "keys" "menu" ] "Every Niri, tmux, Herdr, and Emacs binding" "input-keyboard";
+      capture-text = helper "Capture Text (OCR)" [ "capture-text" ] "OCR a screen region to the clipboard" "edit-copy";
+      capture-qr = helper "Capture QR Code" [ "capture-qr" ] "Decode a QR code from a screen region" "view-barcode-qr";
+      capture-record = helper "Toggle Region Recording" [ "capture-record" ] "Start or stop silent recording of a screen region" "media-record";
+      dictation = helper "Toggle Dictation" [ "dictation" "toggle" ] "Dictate to the clipboard" "audio-input-microphone";
+      share-nearby = helper "Share Clipboard Nearby" [ "share-nearby" "clipboard" ] "Send the clipboard with LocalSend" "send-to";
+      remind-clear = helper "Clear Reminders" [ "remind" "clear" ] "Cancel every pending reminder" "edit-clear";
+      remind-show = helper "Show Reminders" [ "remind" "show" ] "List pending reminders" "appointment-soon" // {
+        exec = "foot --app-id=dev.vals.Reminders --hold ${config.home.homeDirectory}/.local/bin/remind show";
+      };
+    };
+
   xdg.configFile."xdg-terminals.list".text = ''
     foot.desktop
   '';

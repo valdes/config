@@ -72,6 +72,13 @@ class Keys(unittest.TestCase):
             if match:
                 self.assertIn("hotkey-overlay-title=", match.group(2), f"{match.group(1)} spawns without hotkey-overlay-title")
 
+    def test_launcher_entries_point_at_helpers(self):
+        home = (ROOT / "home.nix").read_text()
+        helpers = re.findall(r'= helper "[^"]+" \[ "([^"]+)"', home)
+        self.assertIn("keys", helpers)
+        for name in helpers:
+            self.assertTrue((ROOT / "bin" / name).is_file(), f"launcher entry runs missing helper {name}")
+
     def test_lists_every_source(self):
         output = self.keys()
         for expected in [
