@@ -232,7 +232,11 @@
   :ensure t
   :custom
   (magit-diff-refine-hunk 'all)
-  :bind ("C-x g" . magit-status))
+  :bind (("C-x g" . magit-status)
+         :map aic-git-map
+         ("s" . magit-status)
+         ("f" . magit-diff-buffer-file)
+         ("r" . magit-diff-range)))
 
 (with-eval-after-load 'compile
   (require 'ansi-color)

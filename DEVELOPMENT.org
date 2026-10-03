@@ -43,8 +43,16 @@ work, and =mise= for project toolchain selection.
 
 ** Review changes
 
-Use =C-c g d= to review tracked changes against =HEAD= with Difftastic. Git
-Gutter marks changed lines in file buffers:
+After an agent finishes, open Magit status with =C-c g s= (or =C-x g=) and
+press =g= to refresh. Check staged, unstaged, and untracked files. Expand a
+file or hunk with =TAB=; =C-RET= on a diff line visits that location in the
+worktree. =C-c g f= shows the current file's diff and saves that buffer first.
+
+Use =C-c g d= to review tracked worktree changes against =HEAD= with
+Difftastic; it does not include untracked files or changes already committed
+to =HEAD=. For committed agent work, use =C-c g r= with a range such as
+=main...HEAD=, then review any remaining worktree changes from Magit status
+with =d w=. Git Gutter marks changed lines in file buffers:
 
 - =C-c g p=: visit the previous hunk.
 - =C-c g n=: visit the next hunk.
