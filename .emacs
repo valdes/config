@@ -155,6 +155,14 @@
 (define-prefix-command 'aic-git-map)
 (global-set-key (kbd "C-c g") 'aic-git-map)
 
+(define-prefix-command 'aic-java-map)
+(global-set-key (kbd "C-c j") 'aic-java-map)
+(define-key aic-java-map (kbd "d") #'xref-find-definitions)
+(define-key aic-java-map (kbd "r") #'xref-find-references)
+(define-key aic-java-map (kbd "b") #'xref-go-back)
+(define-key aic-java-map (kbd "a") #'xref-find-apropos)
+(define-key aic-java-map (kbd "e") #'flymake-show-project-diagnostics)
+
 (use-package savehist
   :ensure nil
   :init (savehist-mode 1))
@@ -180,7 +188,10 @@
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
   :bind (([f10] . consult-buffer)
-         ([S-f10] . consult-recent-file)))
+         ([S-f10] . consult-recent-file)
+         :map aic-java-map
+         ("m" . consult-imenu)
+         ("s" . consult-ripgrep)))
 
 (use-package embark
   :ensure t
@@ -388,6 +399,7 @@
   (which-key-mode)
   (which-key-add-key-based-replacements
     "C-c g" "git"
+    "C-c j" "java navigation"
     "C-c x" "agent"))
 
 
@@ -516,8 +528,7 @@
 
 (use-package gradle-mode
   :ensure t
-  :hook ((java-mode . gradle-mode)
-         (java-ts-mode . gradle-mode)))
+  :commands (gradle-mode gradle-build gradle-test gradle-execute))
 
 (use-package groovy-mode
   :ensure t
@@ -567,6 +578,8 @@
 
 (use-package eglot
   :ensure nil
+  :custom
+  (eglot-extend-to-xref t)
   :hook ((java-mode . eglot-ensure)
          (java-ts-mode . eglot-ensure)
          (c-mode . aic-c-mode-setup)
@@ -578,6 +591,10 @@
          (nix-mode . aic-eglot-format-mode-setup)
          (rust-mode . aic-eglot-format-mode-setup)
          (rust-ts-mode . aic-eglot-format-mode-setup))
+  :bind (:map aic-java-map
+              ("i" . eglot-find-implementation)
+              ("c" . eglot-show-call-hierarchy)
+              ("t" . eglot-show-type-hierarchy))
   :config
   (add-to-list 'eglot-server-programs
                '((java-mode java-ts-mode) . ("jdtls")))
