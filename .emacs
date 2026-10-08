@@ -628,7 +628,32 @@
               ("p" . git-gutter:previous-hunk)
               ("n" . git-gutter:next-hunk)
               ("h" . git-gutter:popup-hunk)))
-;; Zenburn theme
+;; Zenburn theme with Alabaster-style highlighting across languages.
 (use-package zenburn-theme
   :ensure t
-  :config (load-theme 'zenburn t))
+  :config
+  (load-theme 'zenburn t)
+  (dolist (entry '((font-lock-string-face . "#9FC59F")
+                   (font-lock-comment-face . "#F0DFAF")
+                   (font-lock-comment-delimiter-face . "#F0DFAF")
+                   (font-lock-doc-face . "#F0DFAF")
+                   (font-lock-doc-markup-face . "#F0DFAF")
+                   (font-lock-constant-face . "#DC8CC3")
+                   (font-lock-number-face . "#DC8CC3")
+                   (font-lock-function-name-face . "#94BFF3")
+                   (font-lock-keyword-face . "#DCDCCC")
+                   (font-lock-type-face . "#DCDCCC")
+                   (font-lock-builtin-face . "#DCDCCC")
+                   (font-lock-preprocessor-face . "#DCDCCC")
+                   (font-lock-variable-name-face . "#DCDCCC")
+                   (font-lock-variable-use-face . "#DCDCCC")
+                   (font-lock-function-call-face . "#DCDCCC")
+                   (font-lock-property-name-face . "#DCDCCC")
+                   (font-lock-property-use-face . "#DCDCCC")
+                   (font-lock-operator-face . "#989890")
+                   (font-lock-bracket-face . "#989890")
+                   (font-lock-delimiter-face . "#989890")))
+    (custom-theme-set-faces
+     'zenburn
+     `(,(car entry) ((t (:foreground ,(cdr entry)
+                        :weight normal :slant normal)))))))
