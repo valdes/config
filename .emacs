@@ -304,7 +304,7 @@
 
 ;{{{ Fn bindings
 (global-set-key  [f1]  #'aic-manual-current-word)
-(global-set-key  [f2]  #'aic-open-org-notes)
+(global-set-key  [f2]  #'org-roam-node-find)
 (global-set-key  [f3]  #'org-agenda-list)
 (global-set-key  [f4]  'make-remember-frame)
 (global-set-key  [f5]  'org-tree-slide-mode)
@@ -333,6 +333,16 @@
 ;}}}
 
 ;{{{ Org Roam
+(defun aic-search-org-notes ()
+  "Search Org-roam note contents, including subdirectories."
+  (interactive)
+  (require 'org-roam)
+  (require 'consult)
+  (let ((consult-ripgrep-args
+         (append (ensure-list consult-ripgrep-args)
+                 '("--glob=*.org"))))
+    (consult-ripgrep org-roam-directory)))
+
 (setq org-roam-v2-ack t)
 (use-package org-roam
   :ensure t
@@ -340,6 +350,9 @@
   (org-roam-directory (file-truename "~/Dropbox/.org-roam/"))
   :bind (("C-c n l" . org-roam-buffer-toggle)
          ("C-c n f" . org-roam-node-find)
+         ("C-c n s" . aic-search-org-notes)
+         ("C-c n b" . org-mark-ring-goto)
+         ("C-c n o" . aic-open-org-notes)
          ("C-c n g" . org-roam-graph)
          ("C-c n i" . org-roam-node-insert)
          ("C-c n c" . org-roam-capture)
@@ -404,6 +417,7 @@
   (which-key-add-key-based-replacements
     "C-c g" "git"
     "C-c j" "java navigation"
+    "C-c n" "notes"
     "C-c x" "agent"))
 
 
