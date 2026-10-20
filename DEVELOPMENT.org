@@ -13,12 +13,20 @@ Project commands use Emacs's built-in =C-x p= prefix:
 - =C-x p p=: switch project.
 - =C-x p f=: find a project file.
 - =C-x p b=: switch project buffer.
-- =C-x p g=: search the project.
-- =C-x p c=: compile from the project root.
+- =C-x p C-b=: list project buffers.
 - =C-x p k=: kill project buffers.
+- =C-x p g=: search project files with a regexp.
+- =C-x p r=: query-replace a regexp across project files.
+- =C-x p D=: open Dired at the project root.
+- =C-x p d=: choose a project directory in Dired.
+- =C-x p c=: compile from the project root.
+- =C-x p s=: open a shell at the project root.
 
-Use =C-x p D= to open Dired at the project root, or =C-x p d= to choose a
-project directory. In Dired:
+=C-x p p= opens a menu for the selected project: find file, switch buffer with
+Consult, open Dired, or search with Consult Ripgrep. =C-x p g= instead uses
+Emacs's built-in project regexp search.
+
+In Dired:
 
 - =n=/=p=: next/previous entry; =RET=: open; =^=: parent directory.
 - =o=: open in another window; =i=: show a subdirectory in the same buffer.
