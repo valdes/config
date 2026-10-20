@@ -17,6 +17,17 @@ Project commands use Emacs's built-in =C-x p= prefix:
 - =C-x p c=: compile from the project root.
 - =C-x p k=: kill project buffers.
 
+Use =C-x p D= to open Dired at the project root, or =C-x p d= to choose a
+project directory. In Dired:
+
+- =n=/=p=: next/previous entry; =RET=: open; =^=: parent directory.
+- =o=: open in another window; =i=: show a subdirectory in the same buffer.
+- =$=: hide/show an inserted subdirectory; =C-s=: search the listing.
+- =(=: hide/show file details; =g=: refresh after external changes; =q=: quit.
+
+For a quick file lookup: =C-x p D=, then =(= for a compact listing, =C-s= to
+search, and =RET= to open the match.
+
 Use =F10= for buffers, =Shift-F10= for recent files, =C-.= for contextual
 Embark actions, and =C-x g= for Magit. Completion uses Vertico, Consult,
 Corfu, Orderless, and Marginalia; project navigation stays on built-in
