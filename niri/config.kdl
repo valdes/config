@@ -579,9 +579,15 @@ binds {
     // Mod+Shift+Ctrl+Left  { move-window-to-monitor-left; }
     // ...
 
-    // And you can also move a whole workspace to another monitor:
-    // Mod+Shift+Ctrl+Left  { move-workspace-to-monitor-left; }
-    // ...
+    // Move the whole workspace to another monitor.
+    Mod+Alt+Left  { move-workspace-to-monitor-left; }
+    Mod+Alt+Down  { move-workspace-to-monitor-down; }
+    Mod+Alt+Up    { move-workspace-to-monitor-up; }
+    Mod+Alt+Right { move-workspace-to-monitor-right; }
+    Mod+Alt+H     { move-workspace-to-monitor-left; }
+    Mod+Alt+J     { move-workspace-to-monitor-down; }
+    Mod+Alt+K     { move-workspace-to-monitor-up; }
+    Mod+Alt+L     { move-workspace-to-monitor-right; }
 
     Mod+Page_Down      { focus-workspace-down; }
     Mod+Page_Up        { focus-workspace-up; }
