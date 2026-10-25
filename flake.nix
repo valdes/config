@@ -74,6 +74,7 @@
     in
     {
       packages.${system} = {
+        java-lsp = pkgs.callPackage ./tools/java-lsp/package.nix { };
         keyd-system = keydSystem;
         codexbar-cli = codexbarCli;
       };

@@ -13,12 +13,14 @@ CODEX_SKILLS_DIR := $(HOME_DIR)/.codex/skills
 CLAUDE_SKILLS_DIR := $(HOME_DIR)/.claude/skills
 WORKFLOW_SCRIPTS := capture-text capture-record capture-qr dictation share-nearby remind transcode-media dev-layout wt agent-notify keys
 
-MANAGED_SKILLS := manage-makefile tiger-style-java workstation
+MANAGED_SKILLS := manage-makefile tiger-style-java workstation java-lsp
 # Omarchy links its Hyprland-oriented skills here; the workstation skill replaces them.
 OMARCHY_SKILL_LINKS := $(HOME_DIR)/.agents/skills/omarchy $(CODEX_SKILLS_DIR)/omarchy $(CLAUDE_SKILLS_DIR)/omarchy
 HOME_MANAGER_REF ?= home-manager/master
 NIX_FLAKE_FLAGS := --extra-experimental-features "nix-command flakes"
 GITLEAKS ?= gitleaks
+
+.PHONY: prepare-java-lsp check-java-lsp test-java-lsp-integration
 
 .DEFAULT_GOAL := help
 
@@ -34,6 +36,9 @@ sync-core: ## Copy Home Manager, desktop, terminal, and background files
 	cp "$(REPO_ROOT)/home.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/flake.nix" "$(HOME_MANAGER_DIR)/"
 	cp "$(REPO_ROOT)/keyd.nix" "$(HOME_MANAGER_DIR)/"
+	install -d "$(HOME_MANAGER_DIR)/tools/java-lsp"
+	cp "$(REPO_ROOT)/tools/java-lsp/"{Cargo.toml,Cargo.lock,package.nix,README.md} "$(HOME_MANAGER_DIR)/tools/java-lsp/"
+	cp -r "$(REPO_ROOT)/tools/java-lsp/"{src,tests} "$(HOME_MANAGER_DIR)/tools/java-lsp/"
 	cp -r "$(REPO_ROOT)/niri" "$(CONFIG_DIR)/"
 	cp "$(REPO_ROOT)/foot/foot.ini" "$(CONFIG_DIR)/foot/foot.ini"
 	cp "$(REPO_ROOT)/herdr/config.toml" "$(CONFIG_DIR)/herdr/config.toml"
@@ -121,7 +126,7 @@ doctor: ## Check that required workstation commands are available
 secrets-check: ## Scan the current branch history for committed secrets
 	"$(GITLEAKS)" git --no-banner --redact "$(REPO_ROOT)"
 
-check: ## Validate repo-managed files, scripts, and desktop configuration
+check: check-java-lsp ## Validate repo-managed files, scripts, and desktop configuration
 	@undocumented="$$(awk '/^[[:alnum:]_-][[:alnum:]_.-]*:/ && $$0 !~ /## / { sub(/:.*/, "", $$1); print $$1 }' "$(REPO_ROOT)/Makefile")"; \
 		test -z "$$undocumented" || { printf "undocumented Make targets:\n%s\n" "$$undocumented" >&2; exit 1; }
 	test -f "$(REPO_ROOT)/DEVELOPMENT.org"
@@ -160,3 +165,16 @@ check: ## Validate repo-managed files, scripts, and desktop configuration
 	python3 "$(REPO_ROOT)/tests/dev-layout.py"
 	python3 "$(REPO_ROOT)/tests/keys.py"
 	emacs --batch -Q --eval '(with-temp-buffer (insert-file-contents "$(REPO_ROOT)/.emacs") (emacs-lisp-mode) (check-parens))'
+
+prepare-java-lsp: ## Fetch the locked Rust dependencies for java-lsp
+	cargo fetch --locked --manifest-path "$(REPO_ROOT)/tools/java-lsp/Cargo.toml"
+
+check-java-lsp: ## Check java-lsp formatting, unit tests, and offline protocol fixtures
+	cargo fmt --manifest-path "$(REPO_ROOT)/tools/java-lsp/Cargo.toml" --check
+	cargo test --locked --offline --manifest-path "$(REPO_ROOT)/tools/java-lsp/Cargo.toml"
+	cargo build --locked --offline --manifest-path "$(REPO_ROOT)/tools/java-lsp/Cargo.toml"
+	python3 "$(REPO_ROOT)/tools/java-lsp/tests/protocol.py"
+
+test-java-lsp-integration: ## Exercise real JDT LS with disposable Maven and Gradle projects (may download dependencies)
+	cargo build --locked --offline --manifest-path "$(REPO_ROOT)/tools/java-lsp/Cargo.toml"
+	JAVA_LSP_TEST_GRADLE=1 python3 "$(REPO_ROOT)/tools/java-lsp/tests/integration.py"

@@ -120,6 +120,7 @@
     nixd
     rust-analyzer
     jdt-language-server
+    (pkgs.callPackage ./tools/java-lsp/package.nix { })
     google-java-format
     spring-boot-cli
 
