@@ -322,14 +322,53 @@
 ;{{{ Org mode
 ;; Core Org settings
 (setq org-directory "~/Dropbox/.org/")
-(setq org-default-notes-file (concat org-directory "/notes.org"))
+(setq org-default-notes-file (expand-file-name "notes.org" org-directory))
 (setq org-log-done 'time)
 
-;; Files included in the agenda.
 (setq org-agenda-files
-      (list "~/Dropbox/.org/index.org"
-            "~/Dropbox/.org/personal.org"
-            "~/Dropbox/.org/computers.org"))
+      (mapcar (lambda (name) (expand-file-name name org-directory))
+              '("notes.org" "projects.org" "areas.org")))
+
+(setq org-capture-templates
+      '(("t" "Task" entry (file org-default-notes-file)
+         "* TODO %?\nCaptured: %U\n%a\n")
+        ("n" "Note" entry (file org-default-notes-file)
+         "* %?\nCaptured: %U\n%a\n")))
+
+(setq org-refile-targets
+      (list (cons (mapcar (lambda (name) (expand-file-name name org-directory))
+                         '("projects.org" "areas.org"))
+                  '(:maxlevel . 1)))
+      org-refile-use-outline-path 'file
+      org-outline-path-complete-in-steps nil
+      org-archive-location "archive/%s::")
+
+(defun aic-org-para-initialize ()
+  "Create missing PARA files and archive directory without replacing notes."
+  (interactive)
+  (make-directory (expand-file-name "archive" org-directory) t)
+  (dolist (entry '(("notes.org" . "Inbox")
+                   ("projects.org" . "Projects")
+                   ("areas.org" . "Areas")))
+    (let ((file (expand-file-name (car entry) org-directory)))
+      (unless (file-exists-p file)
+        (with-temp-buffer
+          (insert "#+title: " (cdr entry) "\n\n")
+          (write-region (point-min) (point-max) file nil 'silent nil 'excl)))))
+  (message "PARA files ready in %s" org-directory))
+
+(defun aic-open-org-projects ()
+  "Open active Org projects."
+  (interactive)
+  (find-file (expand-file-name "projects.org" org-directory)))
+
+(defun aic-open-org-areas ()
+  "Open ongoing Org responsibilities."
+  (interactive)
+  (find-file (expand-file-name "areas.org" org-directory)))
+
+(global-set-key (kbd "C-c n p") #'aic-open-org-projects)
+(global-set-key (kbd "C-c n a") #'aic-open-org-areas)
 ;}}}
 
 ;{{{ Org Roam

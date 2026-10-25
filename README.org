@@ -194,7 +194,7 @@ polkit, and an XDG desktop portal. Check the persistent and user services with:
 ** Emacs notes
 
 Org-roam notes live in =~/Dropbox/.org-roam/=. Use title search and links for
-navigation; the existing agenda, inbox, and journal stay in =~/Dropbox/.org/=.
+navigation; the agenda, inbox, and journal stay in =~/Dropbox/.org/=.
 
 | Binding     | Action                                     |
 |-------------+--------------------------------------------|
@@ -208,6 +208,8 @@ navigation; the existing agenda, inbox, and journal stay in =~/Dropbox/.org/=.
 | =C-c n c=   | Capture a note                             |
 | =C-c n j=   | Capture today's daily note                 |
 | =C-c n o=   | Open the existing =notes.org= inbox         |
+| =C-c n p=   | Open active projects                       |
+| =C-c n a=   | Open ongoing areas of responsibility       |
 
 Press =F2= and type words from a title. Select a match, or enter a new title
 to create a note; finish capture with =C-c C-c= (=C-c C-k= cancels it).
@@ -215,6 +217,53 @@ While writing, use =C-c n i= to link related notes. Follow links with
 =C-c C-o=, inspect incoming links with =C-c n l=, and return with =C-c n b=.
 Use =C-c n s= when you remember the content rather than the title. Pause
 after =C-c n= to see the available commands in Which-key.
+
+*** PARA workflow
+
+After deploying and loading the configuration, run
+=M-x aic-org-para-initialize=. It creates missing files with title headers
+and an archive directory; existing contents are preserved. Loading Emacs
+does not create these files automatically.
+
+| Category | Location                         | Contents                         |
+|----------+----------------------------------+----------------------------------|
+| Inbox    | =~/Dropbox/.org/notes.org=        | Unprocessed tasks and notes      |
+| Projects | =~/Dropbox/.org/projects.org=     | Outcomes with a finish line      |
+| Areas    | =~/Dropbox/.org/areas.org=        | Ongoing responsibilities         |
+| Resources | =~/Dropbox/.org-roam/=           | Reusable knowledge and references |
+| Archives | =~/Dropbox/.org/archive/=        | Completed or inactive work       |
+
+Use one top-level heading per project or area. Keep project-specific notes
+under the project; link reusable knowledge from Org-roam with =C-c n i=.
+
+#+begin_src org
+  * Move workstation configuration to Home Manager
+  Outcome: Required configuration survives a clean installation.
+
+  ** TODO Inventory unmanaged configuration
+  ** TODO Migrate terminal configuration
+  ** Notes
+  Keep host-specific settings explicit.
+#+end_src
+
+Capture with =C-c c t= for a task or =C-c c n= for a note. Both go to the
+inbox with a capture timestamp and source link when available. Finish with
+=C-c C-c= or cancel with =C-c C-k=. =F4= opens the existing capture frame.
+Use =C-c C-w= to refile an inbox heading into a project or area; completion
+shows the destination file and top-level heading. Save affected buffers.
+
+=F3= opens the agenda; =C-c a t= lists TODO entries. Only the inbox,
+projects, and areas contribute to the agenda. The previous =index.org=,
+=personal.org=, and =computers.org= files remain untouched but are no longer
+included; move any still-active entries manually.
+
+Archive a finished project or inactive area with =C-c C-x C-s=. Its subtree
+moves to =archive/projects.org= or =archive/areas.org= respectively; archiving
+an inbox entry uses =archive/notes.org=. Archives stay outside the agenda.
+
+Weekly: empty the inbox, give every active project a next action, review
+ongoing areas, and archive finished work. Use =C-c C-s= for dates you intend
+to act and =C-c C-d= for actual deadlines.
 
 ** keyd
 
