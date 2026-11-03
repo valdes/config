@@ -1,9 +1,15 @@
 ---
 name: java-lsp
-description: Use the local java-lsp CLI for Java symbol navigation, diagnostics, and semantic refactoring through JDT LS. Apply when Java changes need reference-aware rename, extraction, signature changes, or moves.
+description: Use when implementing, debugging, reviewing, or refactoring Java code and services. Provides semantic navigation, reference and caller analysis, diagnostics, and safe refactoring through the local java-lsp CLI and JDT LS.
 ---
 
 # Java semantic operations
+
+During routine Java work, use semantic navigation to understand existing behavior
+and assess changes: resolve relevant symbols, implementations, callers, and
+references. Prefer LSP queries over text matching when Java symbol identity
+matters; use `rg` for filenames and literal text. After changes, check diagnostics
+for affected Java files, then run the project's relevant build and tests.
 
 Run `java-lsp --help` for the command interface. The current Git worktree is the
 project root; use `--root` for other projects. JSON is the default output.
@@ -11,7 +17,8 @@ Positions are one-based lines and Unicode scalar columns, with exclusive range
 ends. Read the exact current source before choosing a position.
 
 Use `symbols`, `references`, `definition`, and `implementations` to resolve Java
-symbols. Prefer file positions when methods are overloaded. `capabilities` reports
+symbols, and `hierarchy --kind callers` to inspect callers. Prefer file positions
+when methods are overloaded. `capabilities` reports
 the tested JDT version; `actions` reports operations available at a selection.
 
 Refactoring commands return a stored preview, without writing sources. Inspect its
