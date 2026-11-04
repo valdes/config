@@ -18,6 +18,9 @@
                          ("melpa" . "https://melpa.org/packages/")))
 
 ;; Basic UI defaults
+;; Hide the title bar on current and future frames.
+(modify-all-frames-parameters '((undecorated . t)))
+
 ;; Turn off the toolbar
 (tool-bar-mode -1)
 
