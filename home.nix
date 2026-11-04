@@ -96,7 +96,7 @@
     shfmt # shell formatter
     watchexec # rerun commands when files change
     gnumake
-    emacs
+    emacs-pgtk # native Wayland; avoids Lucid/XInput2 popup menu dismissal
     nerd-fonts.symbols-only # icon glyphs used by doom-modeline/nerd-icons
     neovim
     mise # manage dev environment
